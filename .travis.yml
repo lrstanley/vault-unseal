@@ -8,7 +8,6 @@ script:
 - make
 - GORACE="exitcode=1 halt_on_error=1" go test -v -coverprofile=coverage.txt -race -timeout 3m -count 3 -cpu 1,4
 - $HOME/gopath/bin/golint -min_confidence 0.9 -set_exit_status
-- go tool vet -v -all .
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 branches:
