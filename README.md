@@ -14,6 +14,7 @@
   - [Build from source](#build-from-source)
 - [Usage](#usage)
 - [Contributing](#contributing)
+- [TODO](#todo)
 - [License](#license)
 
 ## Why
@@ -118,8 +119,8 @@ Note that you must have [Go](https://golang.org/doc/install) installed (`v1.11.1
 ## Usage
 
 The default configuration path is `/etc/vault-unseal.yaml` when using `deb`/`rpm`.
-If you are using these package formats, copy the example config file, `example.vault-unseal.yaml`,
-to `vault-unseal.yaml`.
+If you are not using these package formats, copy the example config file,
+`example.vault-unseal.yaml`, to `vault-unseal.yaml`.
 
 ```
 $ ./vault-unseal --help
@@ -138,6 +139,11 @@ Help Options:
 
 Please review the [CONTRIBUTING](CONTRIBUTING.md) doc for submitting issues/a guide
 on submitting pull requests and helping out.
+
+## TODO
+
+ - [ ] add option to use vault token/another vault instance to obtain keys (e.g. as long the leader is online)?
+ - [ ] memory obfuscating/removing from memory right after unseal?
 
 ## License
 
