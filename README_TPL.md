@@ -36,16 +36,17 @@ morning).
 ## Solution
 
 The goal for this project is to find the best way to unseal vault in a way that
-doesn't compromise too much on security (a good balance between security and
-ease of use/uptime), without the requirement of Vault Enterprise.
+doesn't compromise too much security (a good balance between security and ease of
+use/uptime), without the requirement of Vault Enterprise, or having to move to a
+cloud platform.
 
 We do this by running multiple instances of vault-unseal (you could run one
 on each node in the cluster). Each instance of vault-unseal is given a subset
-of the unseal tokens. How many tokens you should configure for each vault-unseal
-instance depends on how many are required to unseal your cluster -- you want to
-give each node **just enough** tokens, that when paired with another vault-unseal
-node, they can work together to to unseal the vault. Let's use the following
-example:
+of the unseal tokens. You want to give each node **just enough** tokens, that
+when paired with another vault-unseal node, they can work together to unseal the
+vault. What we want to avoid is giving a single vault-unseal instance enough
+tokens to unseal (to prevent a compromise leading to enough tokens being exposed
+that could unseal the vault). Let's use the following example:
 
    * `cluster-1` consists of 3 nodes:
       * `node-1`
