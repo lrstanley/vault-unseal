@@ -15,7 +15,7 @@ help:
 
 readme-gen: ## Generates readme from template file.
 	cp -av "${RSRC}" "${ROUT}"
-	sed -ri -e "s:\[\[tag\]\]:${VERSION}:g" -e "s:\[\[os\]\]:linux:g" -e "s:\[\[arch\]\]:amd64:g" -e "s:\[\[license\]\]:$(cat LICENSE):g" "${ROUT}"
+	sed -ri -e "s:\[\[tag\]\]:${VERSION}:g" -e "s:\[\[os\]\]:linux:g" -e "s:\[\[arch\]\]:amd64:g" "${ROUT}"
 
 snapshot: clean fetch ## Generate a snapshot release.
 	$(GOPATH)/bin/goreleaser --snapshot --skip-validate --skip-publish
