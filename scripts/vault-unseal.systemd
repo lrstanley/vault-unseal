@@ -1,0 +1,25 @@
+[Unit]
+Description=Vault unsealing utility
+Documentation=https://github.com/lrstanley/vault-unseal
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Restart=on-failure
+ExecStart=/usr/bin/vault-unseal --config /etc/vault-unseal.yaml
+
+; Use graceful shutdown with a reasonable timeout
+KillMode=mixed
+KillSignal=SIGQUIT
+TimeoutStopSec=10s
+
+PrivateDevices=true
+; Hide /home, /root, and /run/user.
+ProtectHome=true
+; Make /usr, /boot, /etc and possibly some more folders read-only.
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,16 @@
+*.log
+~*
+*.tmp
+tmp
+*.txt
+dist
+*.test
+*.prof
+*.conf
+*.yml
+*.yaml
+!.goreleaser.yml
+!example.*.yml
+!example.*.yaml
+vendor/*
+vault-unseal

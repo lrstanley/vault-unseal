@@ -1,0 +1,65 @@
+---
+
+# named environment that vault-unseal is running in, gets passed in when sending
+# email alerts.
+environment: dev
+
+# delay between seal-checks of each vault node.
+check_interval: 15s
+
+# maximum delay between checks of each vault node. when an error occurs, we will
+# add a backoff delay, up to this maximum.
+max_check_interval: 30m
+
+# list of vault nodes to check, must include http/https, and a port (unless 80/443).
+vault_nodes:
+  - https://1.2.3.4:8200
+  - https://1.2.3.5:8200
+  - https://1.2.3.6:8200
+
+# unseal tokens necessary to unseal any of the given vaults in the above node
+# list.
+#
+# WARNING: do not put enough tokens in this list that can be used to unseal a
+# vault instance. I.e. if vault requires 3 of 5 tokens, DO NOT PUT 3 TOKENS HERE.
+# the goal is to put less than the required amount, but have more instances of
+# vault-unseal setup with the other missing tokens from the list. this ensures
+# that if the server was compromised, they don't have all of the needed tokens.
+#
+# i.e. 1 instance of vault-unseal on each of the three nodes, each with two
+# tokens. given A, B, and C tokens required, each instance should have the
+# following tokens:
+#   * 1: AB
+#   * 2: BC
+#   * 3: AC
+unseal_tokens:
+  - your-token
+  - your-second-token
+
+# skip tls checks for the given vault instance. useful if your instance doesn't
+# have a certificate which has all of the server hostnames on it.
+tls_skip_verify: false
+
+# email notifications. setting this to false will disable all notifications.
+email:
+  enabled: false
+  hostname: smtp.hostname.com
+  port: 25
+  username: your-username
+  password: your-password
+  # address to send from.
+  from_addr: your-alerts@hostname.com
+  # addresses to send to. the first will be the TO, the second and on will be CC'd
+  # onto the message.
+  send_addrs:
+    - your-alert-group@hostname.com
+    - example-user@hostname.com
+
+# notifications in vault-unseal queue up to prevent email spam (e.g. 20 alerts
+# in one email). this is the max allotted time an event can be queued before
+# the queue is sent as a notification.
+notify_max_elapsed: 10m
+
+# queue delay is the amount of time vault-unseal waits after the last received
+# notification, before it sends all of them in bulk.
+notify_queue_delay: 60s
