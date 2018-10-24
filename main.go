@@ -28,11 +28,13 @@ var (
 	date    = "-"
 )
 
+// Flags are the flags passed via cli.
 type Flags struct {
 	LogPath    string `short:"l" long:"log-path" description:"Optional path to log output to" value-name:"PATH"`
 	ConfigPath string `short:"c" long:"config" description:"Path to configuration file" default:"./vault-unseal.yaml" value-name:"PATH"`
 }
 
+// Config is the marshalled yaml configuration.
 type Config struct {
 	Environment string `yaml:"environment"`
 
