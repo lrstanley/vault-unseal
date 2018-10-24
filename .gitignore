@@ -10,6 +10,7 @@ dist
 *.yml
 *.yaml
 !.goreleaser.yml
+!.travis.yml
 !example.*.yml
 !example.*.yaml
 vendor/*
