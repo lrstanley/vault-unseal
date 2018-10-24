@@ -79,30 +79,30 @@ the utility.
 ### Ubuntu/Debian
 
 ```bash
-$ wget https://liam.sh/ghr/vault-unseal_[[tag]]_[[os]]_[[arch]].deb
-$ dpkg -i vault-unseal_[[tag]]_[[os]]_[[arch]].deb
+$ wget https://liam.sh/ghr/vault-unseal_0.0.1_linux_amd64.deb
+$ dpkg -i vault-unseal_0.0.1_linux_amd64.deb
 $ vault-unseal --help
 ```
 
 ### CentOS/Redhat
 
 ```bash
-$ yum localinstall https://liam.sh/ghr/vault-unseal_[[tag]]_[[os]]_[[arch]].rpm
+$ yum localinstall https://liam.sh/ghr/vault-unseal_0.0.1_linux_amd64.rpm
 $ vault-unseal --help
 ```
 
 Some older CentOS versions may require (if you get `Cannot open: <url>. Skipping.`):
 
 ```console
-$ wget https://liam.sh/ghr/vault-unseal_[[tag]]_[[os]]_[[arch]].rpm
-$ yum localinstall vault-unseal_[[tag]]_[[os]]_[[arch]].rpm
+$ wget https://liam.sh/ghr/vault-unseal_0.0.1_linux_amd64.rpm
+$ yum localinstall vault-unseal_0.0.1_linux_amd64.rpm
 ```
 
 ### Manual Install
 
 ```bash
-$ wget https://liam.sh/ghr/vault-unseal_[[tag]]_[[os]]_[[arch]].tar.gz
-$ tar -C /usr/bin/ -xzvf vault-unseal_[[tag]]_[[os]]_[[arch]].tar.gz vault-unseal
+$ wget https://liam.sh/ghr/vault-unseal_0.0.1_linux_amd64.tar.gz
+$ tar -C /usr/bin/ -xzvf vault-unseal_0.0.1_linux_amd64.tar.gz vault-unseal
 $ chmod +x /usr/bin/vault-unseal
 $ vault-unseal --help
 ```
