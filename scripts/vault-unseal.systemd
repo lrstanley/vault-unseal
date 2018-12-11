@@ -7,19 +7,18 @@ After=network-online.target
 [Service]
 User=root
 Group=root
-Restart=on-failure
 ExecStart=/usr/bin/vault-unseal --config /etc/vault-unseal.yaml
-
-; Use graceful shutdown with a reasonable timeout
+Restart=always
+RestartSec=10
+StartLimitInterval=0
+TimeoutStopSec=10s
 KillMode=mixed
 KillSignal=SIGQUIT
-TimeoutStopSec=10s
 
 PrivateDevices=true
-; Hide /home, /root, and /run/user.
 ProtectHome=true
-; Make /usr, /boot, /etc and possibly some more folders read-only.
 ProtectSystem=full
+PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target
