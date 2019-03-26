@@ -81,30 +81,30 @@ the utility.
 ### Ubuntu/Debian
 
 ```bash
-$ wget https://liam.sh/ghr/vault-unseal_0.0.1_linux_amd64.deb
-$ dpkg -i vault-unseal_0.0.1_linux_amd64.deb
+$ wget https://liam.sh/ghr/vault-unseal_0.0.2_linux_amd64.deb
+$ dpkg -i vault-unseal_0.0.2_linux_amd64.deb
 $ vault-unseal --help
 ```
 
 ### CentOS/Redhat
 
 ```bash
-$ yum localinstall https://liam.sh/ghr/vault-unseal_0.0.1_linux_amd64.rpm
+$ yum localinstall https://liam.sh/ghr/vault-unseal_0.0.2_linux_amd64.rpm
 $ vault-unseal --help
 ```
 
 Some older CentOS versions may require (if you get `Cannot open: <url>. Skipping.`):
 
 ```console
-$ wget https://liam.sh/ghr/vault-unseal_0.0.1_linux_amd64.rpm
-$ yum localinstall vault-unseal_0.0.1_linux_amd64.rpm
+$ wget https://liam.sh/ghr/vault-unseal_0.0.2_linux_amd64.rpm
+$ yum localinstall vault-unseal_0.0.2_linux_amd64.rpm
 ```
 
 ### Manual Install
 
 ```bash
-$ wget https://liam.sh/ghr/vault-unseal_0.0.1_linux_amd64.tar.gz
-$ tar -C /usr/bin/ -xzvf vault-unseal_0.0.1_linux_amd64.tar.gz vault-unseal
+$ wget https://liam.sh/ghr/vault-unseal_0.0.2_linux_amd64.tar.gz
+$ tar -C /usr/bin/ -xzvf vault-unseal_0.0.2_linux_amd64.tar.gz vault-unseal
 $ chmod +x /usr/bin/vault-unseal
 $ vault-unseal --help
 ```
@@ -129,6 +129,7 @@ Usage:
   vault-unseal [OPTIONS]
 
 Application Options:
+  -v, --version          Display the version of vault-unseal and exit
   -l, --log-path=PATH    Optional path to log output to
   -c, --config=PATH      Path to configuration file (default: ./vault-unseal.yaml)
 
