@@ -129,6 +129,7 @@ Usage:
   vault-unseal [OPTIONS]
 
 Application Options:
+  -v, --version          Display the version of vault-unseal and exit
   -l, --log-path=PATH    Optional path to log output to
   -c, --config=PATH      Path to configuration file (default: ./vault-unseal.yaml)
 

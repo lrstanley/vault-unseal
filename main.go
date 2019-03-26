@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"sync"
 	"syscall"
 	"time"
@@ -30,6 +31,7 @@ var (
 
 // Flags are the flags passed via cli.
 type Flags struct {
+	Version    bool   `short:"v" long:"version" description:"Display the version of vault-unseal and exit"`
 	LogPath    string `short:"l" long:"log-path" description:"Optional path to log output to" value-name:"PATH"`
 	ConfigPath string `short:"c" long:"config" description:"Path to configuration file" default:"./vault-unseal.yaml" value-name:"PATH"`
 }
@@ -94,6 +96,11 @@ func main() {
 			os.Exit(0)
 		}
 		os.Exit(1)
+	}
+
+	if cli.Version {
+		fmt.Printf("vault-unseal version: %s [%s] (%s, %s), compiled %s\n", version, commit, runtime.GOOS, runtime.GOARCH, date)
+		os.Exit(0)
 	}
 
 	if cli.LogPath != "" {
