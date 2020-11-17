@@ -1,7 +1,9 @@
 <p align="center">vault-unseal -- auto-unseal utility for Hashicorp Vault</p>
 <p align="center">
-  <a href="https://travis-ci.org/lrstanley/vault-unseal"><img src="https://travis-ci.org/lrstanley/vault-unseal.svg?branch=master" alt="Build Status"></a>
-  <a href="https://byteirc.org/channel/%23%2Fdev%2Fnull"><img src="https://img.shields.io/badge/ByteIRC-%23%2Fdev%2Fnull-blue.svg" alt="IRC Chat"></a>
+  <a href="https://github.com/lrstanley/vault-unseal/releases"><img src="https://github.com/lrstanley/vault-unseal/workflows/release/badge.svg" alt="Release Status"></a>
+  <a href="https://github.com/lrstanley/vault-unseal/actions"><img src="https://github.com/lrstanley/vault-unseal/workflows/build/badge.svg" alt="Build Status"></a>
+  <a href="https://hub.docker.com/r/lrstanley/vault-unseal/tags"><img src="https://img.shields.io/badge/Docker-lrstanley%2Fvault-unseal%3Alatest-blue.svg" alt="Docker"></a>
+  <a href="https://liam.sh/chat"><img src="https://img.shields.io/badge/Community-Chat%20with%20us-green.svg" alt="Community Chat"></a>
 </p>
 
 ## Table of Contents
@@ -81,37 +83,37 @@ the utility.
 ### Ubuntu/Debian
 
 ```bash
-$ wget https://liam.sh/ghr/vault-unseal_0.0.2_linux_amd64.deb
-$ dpkg -i vault-unseal_0.0.2_linux_amd64.deb
+$ wget https://liam.sh/ghr/vault-unseal_<version>_linux_amd64.deb
+$ dpkg -i vault-unseal_<version>_linux_amd64.deb
 $ vault-unseal --help
 ```
 
 ### CentOS/Redhat
 
 ```bash
-$ yum localinstall https://liam.sh/ghr/vault-unseal_0.0.2_linux_amd64.rpm
+$ yum localinstall https://liam.sh/ghr/vault-unseal_<version>_linux_amd64.rpm
 $ vault-unseal --help
 ```
 
 Some older CentOS versions may require (if you get `Cannot open: <url>. Skipping.`):
 
 ```console
-$ wget https://liam.sh/ghr/vault-unseal_0.0.2_linux_amd64.rpm
-$ yum localinstall vault-unseal_0.0.2_linux_amd64.rpm
+$ wget https://liam.sh/ghr/vault-unseal_<version>_linux_amd64.rpm
+$ yum localinstall vault-unseal_<version>_linux_amd64.rpm
 ```
 
 ### Manual Install
 
 ```bash
-$ wget https://liam.sh/ghr/vault-unseal_0.0.2_linux_amd64.tar.gz
-$ tar -C /usr/bin/ -xzvf vault-unseal_0.0.2_linux_amd64.tar.gz vault-unseal
+$ wget https://liam.sh/ghr/vault-unseal_<version>_linux_amd64.tar.gz
+$ tar -C /usr/bin/ -xzvf vault-unseal_<version>_linux_amd64.tar.gz vault-unseal
 $ chmod +x /usr/bin/vault-unseal
 $ vault-unseal --help
 ```
 
 ### Source
 
-Note that you must have [Go](https://golang.org/doc/install) installed (`v1.11.1` required).
+Note that you must have [Go](https://golang.org/doc/install) installed (latest is usually best).
 
     $ git clone https://github.com/lrstanley/vault-unseal.git && cd vault-unseal
     $ make
@@ -121,7 +123,8 @@ Note that you must have [Go](https://golang.org/doc/install) installed (`v1.11.1
 
 The default configuration path is `/etc/vault-unseal.yaml` when using `deb`/`rpm`.
 If you are not using these package formats, copy the example config file,
-`example.vault-unseal.yaml`, to `vault-unseal.yaml`.
+`example.vault-unseal.yaml`, to `vault-unseal.yaml`. Note, all fields can be provided
+via environment variables (vault-unseal also supports `.env` files).
 
 ```
 $ ./vault-unseal --help
