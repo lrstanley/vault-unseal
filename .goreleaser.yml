@@ -1,29 +1,25 @@
-# goreleaser.yml
 project_name: vault-unseal
 build:
   binary: vault-unseal
-  goos:
-    - linux
-  goarch:
-    - amd64
+  goos: [linux]
+  goarch: [amd64]
   ldflags: -s -w -X main.version=v{{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
-nfpm:
-  homepage: https://github.com/lrstanley/vault-unseal
-  maintainer: Liam Stanley <me@liamstanley.io>
-  description: vault-unseal -- Vault auto-unseal utility.
-  license: MIT
-  formats:
-    - rpm
-    - deb
-  bindir: /usr/bin
-  config_files:
-    "example.vault-unseal.yaml": "/etc/vault-unseal.yaml"
-  files:
-    "scripts/vault-unseal.systemd": "/etc/systemd/system/vault-unseal.service"
-  scripts:
-    postinstall: "scripts/postinstall.sh"
-    preremove: "scripts/preremove.sh"
-archive:
-  format: tar.gz
+nfpms:
+  - homepage: https://github.com/lrstanley/vault-unseal
+    maintainer: Liam Stanley <me@liamstanley.io>
+    description: vault-unseal -- Vault auto-unseal utility.
+    license: MIT
+    formats: [deb, rpm]
+    bindir: /usr/bin
+    config_files:
+      "example.vault-unseal.yaml": "/etc/vault-unseal.yaml"
+    files:
+      "scripts/vault-unseal.systemd": "/etc/systemd/system/vault-unseal.service"
+    scripts:
+      postinstall: "scripts/postinstall.sh"
+      preremove: "scripts/preremove.sh"
+archives:
+  - id: tgz
+    format: tar.gz
 snapshot:
   name_template: snapshot-{{.Commit}}
