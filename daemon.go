@@ -9,6 +9,8 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"github.com/apex/log"
 )
 
 func worker(done <-chan struct{}, wg *sync.WaitGroup, addr string) {
@@ -26,15 +28,18 @@ func worker(done <-chan struct{}, wg *sync.WaitGroup, addr string) {
 		}
 
 		if errCount > 0 {
-			logger.Printf("delaying checks for %s for %v due to errors", addr, errDelay)
+			logger.WithFields(log.Fields{
+				"delay": errDelay,
+				"addr":  addr,
+			}).Info("delaying checks due to errors")
 		}
 
 		select {
 		case <-done:
-			logger.Printf("closing worker for %s", addr)
+			logger.WithField("addr", addr).Info("closing worker")
 			return
 		case <-time.After(conf.CheckInterval + errDelay):
-			logger.Printf("running check for %s", addr)
+			logger.WithField("addr", addr).Info("running checks")
 
 			status, err := client.Sys().SealStatus()
 			if err != nil {
@@ -47,7 +52,7 @@ func worker(done <-chan struct{}, wg *sync.WaitGroup, addr string) {
 					// blips.
 
 					if errCount == 1 {
-						logger.Printf(nerr.Error())
+						logger.WithField("addr", addr).WithError(err).Error("checking seal status")
 						continue
 					}
 				}
@@ -55,7 +60,7 @@ func worker(done <-chan struct{}, wg *sync.WaitGroup, addr string) {
 				notify(nerr)
 				continue
 			}
-			logger.Printf("seal status for %q: %#v", addr, status)
+			logger.WithFields(log.Fields{"addr": addr, "status": status}).Info("seal status")
 			if !status.Sealed {
 				// Not sealed, don't do anything.
 				errCount = 0
@@ -69,7 +74,12 @@ func worker(done <-chan struct{}, wg *sync.WaitGroup, addr string) {
 			// one key from another.
 
 			for i, token := range conf.Tokens {
-				logger.Printf("using unseal token %d on %v (currently: %d of %d)", i+1, addr, status.Progress, status.T)
+				logger.WithFields(log.Fields{
+					"addr":     addr,
+					"token":    i + 1,
+					"progress": status.Progress,
+					"total":    status.T,
+				}).Info("using unseal token")
 				resp, err := client.Sys().Unseal(token)
 				if err != nil {
 					notify(fmt.Errorf("using unseal key %d on %v: %v", i+1, addr, err))
@@ -77,7 +87,7 @@ func worker(done <-chan struct{}, wg *sync.WaitGroup, addr string) {
 					continue
 				}
 
-				logger.Printf("token successfully sent for %v", addr)
+				logger.WithField("addr", addr).Info("token successfully sent")
 				if !resp.Sealed {
 					notify(fmt.Errorf("(was sealed) %v now unsealed with tokens", addr))
 					continue

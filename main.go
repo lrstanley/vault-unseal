@@ -5,10 +5,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,8 +17,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/apex/log"
+	"github.com/apex/log/handlers/discard"
+	"github.com/apex/log/handlers/json"
+	"github.com/apex/log/handlers/logfmt"
+	"github.com/apex/log/handlers/text"
 	vapi "github.com/hashicorp/vault/api"
 	flags "github.com/jessevdk/go-flags"
+	_ "github.com/joho/godotenv/autoload"
 	"github.com/phayes/permbits"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -29,49 +35,54 @@ var (
 	date    = "-"
 )
 
-// Flags are the flags passed via cli.
-type Flags struct {
-	Version    bool   `short:"v" long:"version" description:"Display the version of vault-unseal and exit"`
-	LogPath    string `short:"l" long:"log-path" description:"Optional path to log output to" value-name:"PATH"`
-	ConfigPath string `short:"c" long:"config" description:"Path to configuration file" default:"./vault-unseal.yaml" value-name:"PATH"`
-}
-
-// Config is the marshalled yaml configuration.
+// Config is a combo of the flags passed to the cli and the configuration file (if used).
 type Config struct {
-	Environment string `yaml:"environment"`
+	Version    bool   `short:"v" long:"version" description:"display the version of vault-unseal and exit"`
+	Debug      bool   `short:"D" long:"debug" description:"enable debugging (extra logging)"`
+	ConfigPath string `env:"CONFIG_PATH" short:"c" long:"config" description:"path to configuration file" value-name:"PATH"`
 
-	CheckInterval    time.Duration `yaml:"check_interval"`
-	MaxCheckInterval time.Duration `yaml:"max_check_interval"`
+	Log struct {
+		Path   string `env:"LOG_PATH" long:"path" description:"path to log output to" value-name:"PATH"`
+		Quiet  bool   `env:"LOG_QUIET" long:"quiet" description:"disable logging to stdout (also: see levels)"`
+		Level  string `env:"LOG_LEVEL" long:"level" default:"info" choice:"debug" choice:"info" choice:"warn" choice:"error" choice:"fatal"  description:"logging level"`
+		JSON   bool   `env:"LOG_JSON" long:"json" description:"output logs in JSON format"`
+		Pretty bool   `env:"LOG_PRETTY" long:"pretty" description:"output logs in a pretty colored format (cannot be easily parsed)"`
+	} `group:"Logging Options" namespace:"log"`
 
-	Nodes         []string `yaml:"vault_nodes"`
-	TLSSkipVerify bool     `yaml:"tls_skip_verify"`
-	Tokens        []string `yaml:"unseal_tokens"`
+	Environment string `env:"ENVIRONMENT" long:"environment" description:"environment this cluster relates to (for logging)" yaml:"environment"`
 
-	NotifyMaxElapsed time.Duration `yaml:"notify_max_elapsed"`
-	NotifyQueueDelay time.Duration `yaml:"notify_queue_delay"`
+	CheckInterval    time.Duration `env:"CHECK_INTERVAL" long:"check-interval" description:"frequency of sealed checks against nodes" yaml:"check_interval"`
+	MaxCheckInterval time.Duration `env:"MAX_CHECK_INTERVAL" long:"max-check-interval" description:"max time that vault-unseal will wait for an unseal check/attempt" yaml:"max_check_interval"`
+
+	Nodes         []string `env:"NODES" long:"nodes" env-delim:"," description:"nodes to connect/provide tokens to (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"vault_nodes"`
+	TLSSkipVerify bool     `env:"TLS_SKIP_VERIFY" long:"tls-skip-verify" description:"disables tls certificate validation: DO NOT DO THIS" yaml:"tls_skip_verify"`
+	Tokens        []string `env:"TOKENS" long:"tokens" env-delim:"," description:"tokens to provide to nodes (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"unseal_tokens"`
+
+	NotifyMaxElapsed time.Duration `env:"NOTIFY_MAX_ELAPSED" long:"notify-max-elapsed" description:"max time before the notification can be queued before it is sent" yaml:"notify_max_elapsed"`
+	NotifyQueueDelay time.Duration `env:"NOTIFY_QUEUE_DELAY" long:"notify-queue-delay" description:"time we queue the notification to allow as many notifications to be sent in one go (e.g. if no notification within X time, send all notifications)" yaml:"notify_queue_delay"`
 
 	Email struct {
-		Enabled   bool     `yaml:"enabled"`
-		Hostname  string   `yaml:"hostname"`
-		Port      int      `yaml:"port"`
-		Username  string   `yaml:"username"`
-		Password  string   `yaml:"password"`
-		FromAddr  string   `yaml:"from_addr"`
-		SendAddrs []string `yaml:"send_addrs"`
-	} `yaml:"email"`
+		Enabled   bool     `env:"EMAIL_ENABLED" long:"enabled" description:"enables email support" yaml:"enabled"`
+		Hostname  string   `env:"EMAIL_HOSTNAME" long:"hostname" description:"hostname of mail server" yaml:"hostname"`
+		Port      int      `env:"EMAIL_PORT" long:"port" description:"port of mail server" yaml:"port"`
+		Username  string   `env:"EMAIL_USERNAME" long:"username" description:"username to authenticate to mail server" yaml:"username"`
+		Password  string   `env:"EMAIL_PASSWORD" long:"password" description:"password to authenticate to mail server" yaml:"password"`
+		FromAddr  string   `env:"EMAIL_FROM_ADDR" long:"from-addr" description:"address to use as 'From'" yaml:"from_addr"`
+		SendAddrs []string `env:"EMAIL_SEND_ADDRS" long:"send-addrs" description:"addresses to send notifications to" yaml:"send_addrs"`
+	} `group:"Email Options" namespace:"email" yaml:"email"`
 
 	lastModifiedCheck time.Time
 }
 
 var (
-	cli  = &Flags{}
 	conf = &Config{
 		CheckInterval: 30 * time.Second,
 	}
-	logger     = log.New(os.Stdout, "", log.Lshortfile|log.LstdFlags)
 	httpClient = &http.Client{
 		Timeout: 10 * time.Second,
 	}
+
+	logger log.Interface
 )
 
 func newVault(addr string) (vault *vapi.Client) {
@@ -91,53 +102,81 @@ func newVault(addr string) (vault *vapi.Client) {
 
 func main() {
 	var err error
-	if _, err = flags.Parse(cli); err != nil {
+	if _, err = flags.Parse(conf); err != nil {
 		if FlagErr, ok := err.(*flags.Error); ok && FlagErr.Type == flags.ErrHelp {
 			os.Exit(0)
 		}
 		os.Exit(1)
 	}
 
-	if cli.Version {
+	if conf.Version {
 		fmt.Printf("vault-unseal version: %s [%s] (%s, %s), compiled %s\n", version, commit, runtime.GOOS, runtime.GOARCH, date)
 		os.Exit(0)
 	}
 
-	if cli.LogPath != "" {
-		logf, err := os.OpenFile(cli.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	var logWriter io.Writer
+	logWriter = os.Stdout
+
+	if conf.Log.Path != "" {
+		logf, err := os.OpenFile(conf.Log.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error opening log file %q: %v", cli.LogPath, err)
+			fmt.Fprintf(os.Stderr, "error opening log file %q: %v", conf.Log.Path, err)
 			os.Exit(1)
 		}
 		defer logf.Close()
 
-		logger.SetOutput(io.MultiWriter(os.Stdout, logf))
+		logWriter = io.MultiWriter(os.Stdout, logf)
 	}
 
-	if err := readConfig(cli.ConfigPath); err != nil {
-		logger.Fatal(err)
+	// Initialize logging.
+	initLogger := &log.Logger{}
+	if conf.Debug {
+		initLogger.Level = log.DebugLevel
+	} else {
+		initLogger.Level = log.MustParseLevel(conf.Log.Level)
+	}
+
+	if conf.Log.Quiet {
+		initLogger.Handler = discard.New()
+	} else if conf.Log.JSON {
+		initLogger.Handler = json.New(logWriter)
+	} else if conf.Log.Pretty {
+		initLogger.Handler = text.New(logWriter)
+	} else {
+		initLogger.Handler = logfmt.New(logWriter)
+	}
+
+	logger = initLogger.WithFields(log.Fields{
+		"environment": conf.Environment,
+		"version":     version,
+	})
+
+	if err := readConfig(conf.ConfigPath); err != nil {
+		logger.WithError(err).Fatal("error reading config")
 	}
 
 	var wg sync.WaitGroup
 	done := make(chan struct{})
 
 	for _, addr := range conf.Nodes {
-		logger.Printf("invoking worker for %s", addr)
+		logger.WithField("addr", addr).Info("invoking worker")
 		wg.Add(1)
 		go worker(done, &wg, addr)
 	}
 
 	go notifier(done, &wg)
 
-	go func() {
-		for {
-			time.Sleep(15 * time.Second)
+	if conf.ConfigPath != "" {
+		go func() {
+			for {
+				time.Sleep(15 * time.Second)
 
-			if err := readConfig(cli.ConfigPath); err != nil {
-				logger.Fatal(err)
+				if err := readConfig(conf.ConfigPath); err != nil {
+					logger.WithError(err).Fatal("error reading config")
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	go func() {
 		catch()
@@ -148,27 +187,32 @@ func main() {
 }
 
 func readConfig(path string) error {
-	fi, err := os.Stat(path)
-	if err != nil {
-		return err
-	}
+	var err error
+	var fi os.FileInfo
 
-	if perms := permbits.FileMode(fi.Mode()); perms != 0600 {
-		logger.Fatalf("error: permissions of %q are insecure: %s, please use 0600", path, perms)
-	}
+	if path != "" {
+		fi, err = os.Stat(path)
+		if err != nil {
+			return err
+		}
 
-	// Check to see if it's updated.
-	if fi.ModTime() == conf.lastModifiedCheck {
-		return nil
-	}
+		if perms := permbits.FileMode(fi.Mode()); perms != 0600 {
+			return fmt.Errorf("permissions of %q are insecure: %s, please use 0600", path, perms)
+		}
 
-	b, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
+		// Check to see if it's updated.
+		if fi.ModTime() == conf.lastModifiedCheck {
+			return nil
+		}
 
-	if err = yaml.Unmarshal(b, conf); err != nil {
-		return err
+		b, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		if err = yaml.Unmarshal(b, conf); err != nil {
+			return err
+		}
 	}
 
 	if conf.CheckInterval < 5*time.Second {
@@ -180,28 +224,30 @@ func readConfig(path string) error {
 	}
 
 	if len(conf.Nodes) < 3 {
-		logger.Fatal("error: not enough nodes in node list (must have at least 3!)")
+		return errors.New("not enough nodes in node list (must have at least 3!)")
 	}
 
 	if len(conf.Tokens) < 1 {
-		logger.Fatal("error: no tokens found in config")
+		return errors.New("no tokens found in config")
 	}
 
 	if len(conf.Tokens) >= 3 {
-		logger.Printf("warning: found %d tokens in the config, make sure this is not a security risk", len(conf.Tokens))
+		logger.Warnf("found %d tokens in the config, make sure this is not a security risk", len(conf.Tokens))
 	}
 
 	if conf.Email.Enabled {
 		if len(conf.Email.SendAddrs) < 1 {
-			logger.Fatal("error: no send addresses setup for email")
+			return errors.New("no send addresses setup for email")
 		}
 		if conf.Email.Hostname == "" || conf.Email.FromAddr == "" {
-			logger.Fatal("error: email hostname or from address is empty")
+			return errors.New("email hostname or from address is empty")
 		}
 	}
 
-	logger.Printf("updated config from %q", path)
-	conf.lastModifiedCheck = fi.ModTime()
+	if path != "" {
+		logger.WithField("path", path).Info("updated config")
+		conf.lastModifiedCheck = fi.ModTime()
+	}
 
 	return nil
 }
@@ -211,5 +257,5 @@ func catch() {
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	<-signals
-	fmt.Println("\ninvoked termination, cleaning up")
+	logger.Info("invoked termination, cleaning up")
 }

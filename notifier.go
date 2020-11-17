@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/apex/log"
 	mail "gopkg.in/mail.v2"
 )
 
@@ -28,7 +29,7 @@ type notifyError struct {
 
 func notify(err error) {
 	err = errors.New("error: " + err.Error())
-	logger.Println(err)
+	logger.WithError(err).Error("notify-error")
 
 	if !conf.Email.Enabled {
 		return
@@ -40,7 +41,7 @@ func notify(err error) {
 func notifier(done chan struct{}, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	logger.Println("starting notifier")
+	logger.Info("starting notifier")
 
 	// Wait for events, and sort of act like a debouncer. As a new event comes in,
 	// it prevents the time.After statement from returning, thus resetting it's
@@ -72,7 +73,7 @@ func sendQueue() {
 		return
 	}
 
-	logger.Printf("attempting to send notifications for %d alerts", len(notifyQueue))
+	logger.Infof("attempting to send notifications for %d alerts", len(notifyQueue))
 
 	text := `vault-unseal ran into errors when attempting to check seal status/unseal. here are the errors:
 `
@@ -91,7 +92,10 @@ func sendQueue() {
 	}
 	s, err := smtp.Dial()
 	if err != nil {
-		logger.Printf("error: unable to make smtp connection to %s:%v: %v", conf.Email.Hostname, conf.Email.Port, err)
+		logger.WithError(err).WithFields(log.Fields{
+			"hostname": conf.Email.Hostname,
+			"port":     conf.Email.Port,
+		}).Error("unable to make smtp connection")
 		return
 	}
 
@@ -108,10 +112,10 @@ func sendQueue() {
 	}
 
 	if err := mail.Send(s, msg); err != nil {
-		logger.Printf("error sending notification: %v", err)
+		logger.WithError(err).Error("unable to send notification")
 		return
 	}
 
-	logger.Printf("successfully sent notifications to: [%q]", strings.Join(conf.Email.SendAddrs, ","))
+	logger.WithField("to", strings.Join(conf.Email.SendAddrs, ",")).Info("successfully sent notifications")
 	notifyQueue = nil
 }
