@@ -10,6 +10,7 @@
 - [Why](#why)
 - [Solution](#solution)
 - [Installation](#installation)
+  - [Docker](#docker)
   - [Ubuntu/Debian](#ubuntudebian)
   - [CentOS/Redhat](#centosredhat)
   - [Manual Install](#manual-install)
@@ -79,6 +80,12 @@ Check out the [releases](https://github.com/lrstanley/vault-unseal/releases)
 page for prebuilt versions. vault-unseal should work on ubuntu/debian,
 centos/redhat/fedora, etc. Below are example commands of how you would install
 the utility.
+
+### Docker
+
+```bash
+$ docker run -it --rm lrstanley/vault-unseal:latest
+```
 
 ### Ubuntu/Debian
 
