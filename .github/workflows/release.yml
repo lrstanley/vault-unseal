@@ -1,0 +1,51 @@
+name: release
+
+on:
+  push:
+    paths-ignore: ['.gitignore', '**/*.md']
+    branches: [master]
+    tags: ["*"]
+
+jobs:
+  goreleaser:
+    if: contains(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-go@v2
+      with: { go-version: ^1.15 }
+    - uses: actions/checkout@v2
+    - name: build
+      run: make fetch
+    - name: add release note context
+      run: |
+        echo "Docker Releases are [located here](https://hub.docker.com/r/lrstanley/vault-unseal/tags)." >> notes-header.md
+        go version >> notes-footer.md
+    - name: release
+      uses: goreleaser/goreleaser-action@v2
+      with:
+        version: latest
+        args: release --rm-dist --skip-validate --release-header=notes-header.md --release-footer=notes-footer.md
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  docker-publish-tags:
+    if: contains(github.ref, 'refs/tags/v')
+    needs: [goreleaser]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: lrstanley/vault-unseal
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        tag_semver: true
+  docker-publish-latest:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: lrstanley/vault-unseal
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
