@@ -1,7 +1,9 @@
 name: build
 
 on:
-  push: { branches: [master] }
+  push:
+    paths-ignore: ['.gitignore', '**/*.md']
+    branches: [master]
   pull_request: { branches: [master] }
 
 jobs:
