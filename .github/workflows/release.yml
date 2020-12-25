@@ -34,6 +34,7 @@ jobs:
     - uses: actions/setup-go@v2
       with: { go-version: "${{ steps.goversion.outputs.version }}" }
     - uses: actions/checkout@v2
+      with: { fetch-depth: 0 }
     - run: make fetch
     - run: |
         echo "Docker Releases are [located here](https://hub.docker.com/r/lrstanley/vault-unseal/tags)." >> notes-header.md
