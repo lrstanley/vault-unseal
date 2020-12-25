@@ -11,8 +11,11 @@ jobs:
     if: contains(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
+    - id: goversion
+      run: |
+        echo ::set-output name=version::$(curl -s https://raw.githubusercontent.com/actions/go-versions/main/versions-manifest.json | sed -rn 's/.*"version": "([0-9]\.[0-9]+(\.[0-9]+)?)".*/\1/p' | head -1)
     - uses: actions/setup-go@v2
-      with: { go-version: ^1.15 }
+      with: { go-version: ${{ steps.goversion.outputs.version }} }
     - uses: actions/checkout@v2
     - name: build
       run: make fetch
