@@ -15,3 +15,4 @@ dist
 vendor/*
 vault-unseal
 **/.env
+**/bin/**
