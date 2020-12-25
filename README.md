@@ -2,7 +2,7 @@
 <p align="center">
   <a href="https://github.com/lrstanley/vault-unseal/releases"><img src="https://github.com/lrstanley/vault-unseal/workflows/release/badge.svg" alt="Release Status"></a>
   <a href="https://github.com/lrstanley/vault-unseal/actions"><img src="https://github.com/lrstanley/vault-unseal/workflows/build/badge.svg" alt="Build Status"></a>
-  <a href="https://hub.docker.com/r/lrstanley/vault-unseal/tags"><img src="https://img.shields.io/badge/Docker-lrstanley%2Fvault-unseal%3Alatest-blue.svg" alt="Docker"></a>
+  <a href="https://hub.docker.com/r/lrstanley/vault-unseal/tags"><img src="https://img.shields.io/badge/Docker-lrstanley%2Fvault--unseal%3Alatest-blue.svg" alt="Docker"></a>
   <a href="https://liam.sh/chat"><img src="https://img.shields.io/badge/Community-Chat%20with%20us-green.svg" alt="Community Chat"></a>
 </p>
 
