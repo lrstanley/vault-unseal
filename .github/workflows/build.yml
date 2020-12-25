@@ -12,6 +12,6 @@ jobs:
       run: |
         echo ::set-output name=version::$(curl -s https://raw.githubusercontent.com/actions/go-versions/main/versions-manifest.json | sed -rn 's/.*"version": "([0-9]\.[0-9]+(\.[0-9]+)?)".*/\1/p' | head -1)
     - uses: actions/setup-go@v2
-      with: { go-version: ${{ steps.goversion.outputs.version }} }
+      with: { go-version: "${{ steps.goversion.outputs.version }}" }
     - uses: actions/checkout@v2
     - run: make
