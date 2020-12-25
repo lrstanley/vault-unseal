@@ -14,5 +14,4 @@ jobs:
     - uses: actions/setup-go@v2
       with: { go-version: ${{ steps.goversion.outputs.version }} }
     - uses: actions/checkout@v2
-    - name: build
-      run: make
+    - run: make

@@ -7,7 +7,24 @@ on:
     tags: ["*"]
 
 jobs:
-  goreleaser:
+  goreleaser-publish-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+    - id: goversion
+      run: |
+        echo ::set-output name=version::$(curl -s https://raw.githubusercontent.com/actions/go-versions/main/versions-manifest.json | sed -rn 's/.*"version": "([0-9]\.[0-9]+(\.[0-9]+)?)".*/\1/p' | head -1)
+    - uses: actions/setup-go@v2
+      with: { go-version: ${{ steps.goversion.outputs.version }} }
+    - uses: actions/checkout@v2
+    - run: make fetch
+    - uses: goreleaser/goreleaser-action@v2
+      with:
+        version: latest
+        args: release --rm-dist --snapshot
+      env: { GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} }
+    - uses: actions/upload-artifact@v2
+      with: { path: dist/, if-no-files-found: error }
+  goreleaser-publish-tags:
     if: contains(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
@@ -17,22 +34,18 @@ jobs:
     - uses: actions/setup-go@v2
       with: { go-version: ${{ steps.goversion.outputs.version }} }
     - uses: actions/checkout@v2
-    - name: build
-      run: make fetch
-    - name: add release note context
-      run: |
+    - run: make fetch
+    - run: |
         echo "Docker Releases are [located here](https://hub.docker.com/r/lrstanley/vault-unseal/tags)." >> notes-header.md
         go version >> notes-footer.md
-    - name: release
-      uses: goreleaser/goreleaser-action@v2
+    - uses: goreleaser/goreleaser-action@v2
       with:
         version: latest
         args: release --rm-dist --skip-validate --release-header=notes-header.md --release-footer=notes-footer.md
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env: { GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} }
   docker-publish-tags:
     if: contains(github.ref, 'refs/tags/v')
-    needs: [goreleaser]
+    needs: [goreleaser-publish-tags]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
