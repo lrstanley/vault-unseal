@@ -22,8 +22,6 @@ jobs:
         version: latest
         args: release --rm-dist --snapshot
       env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
-    - uses: actions/upload-artifact@v2
-      with: { path: dist/*_snapshot*, if-no-files-found: error }
   goreleaser-publish-tags:
     if: contains(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
