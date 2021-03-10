@@ -26,7 +26,7 @@ Depending on your use-case for Vault, you may or may not have opted for Vault
 Enterprise. If you have not, auto-unseal functionality for on-prem is currently
 only in enterprise (for cloud, it is now in the OSS version). If what you are
 storing in vault isn't sensitive enough to require human intervention, you may
-want to role your own unseal functionality. The problem with this is it is very
+want to roll your own unseal functionality. The problem with this is it is very
 hard to do safely.
 
 So, what do we need to solve? we want to auto-unseal a vault, by providing the
