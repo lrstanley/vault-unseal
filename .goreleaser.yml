@@ -14,8 +14,9 @@ nfpms:
     contents:
       - src: example.vault-unseal.yaml
         dst: /etc/vault-unseal.yaml
-    files:
-      "scripts/vault-unseal.systemd": "/etc/systemd/system/vault-unseal.service"
+        type: config
+      - src: scripts/vault-unseal.systemd
+        dst: /etc/systemd/system/vault-unseal.service
     scripts:
       postinstall: "scripts/postinstall.sh"
       preremove: "scripts/preremove.sh"
