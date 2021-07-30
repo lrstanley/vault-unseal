@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/apex/log"
-	"github.com/apex/log/handlers/discard"
 	"github.com/apex/log/handlers/json"
 	"github.com/apex/log/handlers/logfmt"
 	"github.com/apex/log/handlers/text"
@@ -114,20 +113,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	var logWriter io.Writer
-	logWriter = os.Stdout
-
-	if conf.Log.Path != "" {
-		logf, err := os.OpenFile(conf.Log.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error opening log file %q: %v", conf.Log.Path, err)
-			os.Exit(1)
-		}
-		defer logf.Close()
-
-		logWriter = io.MultiWriter(os.Stdout, logf)
-	}
-
 	// Initialize logging.
 	initLogger := &log.Logger{}
 	if conf.Debug {
@@ -136,14 +121,31 @@ func main() {
 		initLogger.Level = log.MustParseLevel(conf.Log.Level)
 	}
 
-	if conf.Log.Quiet {
-		initLogger.Handler = discard.New()
-	} else if conf.Log.JSON {
-		initLogger.Handler = json.New(logWriter)
-	} else if conf.Log.Pretty {
-		initLogger.Handler = text.New(logWriter)
+	logWriters := []io.Writer{}
+
+	if conf.Log.Path != "" {
+		logFileWriter, err := os.OpenFile(conf.Log.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error opening log file %q: %v", conf.Log.Path, err)
+			os.Exit(1)
+		}
+		defer logFileWriter.Close()
+
+		logWriters = append(logWriters, logFileWriter)
+	}
+
+	if !conf.Log.Quiet {
+		logWriters = append(logWriters, os.Stdout)
 	} else {
-		initLogger.Handler = logfmt.New(logWriter)
+		logWriters = append(logWriters, ioutil.Discard)
+	}
+
+	if conf.Log.JSON {
+		initLogger.Handler = json.New(io.MultiWriter(logWriters...))
+	} else if conf.Log.Pretty {
+		initLogger.Handler = text.New(io.MultiWriter(logWriters...))
+	} else {
+		initLogger.Handler = logfmt.New(io.MultiWriter(logWriters...))
 	}
 
 	logger = initLogger.WithFields(log.Fields{
