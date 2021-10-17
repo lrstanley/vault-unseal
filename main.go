@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -77,21 +76,22 @@ var (
 	conf = &Config{
 		CheckInterval: 30 * time.Second,
 	}
-	httpClient = &http.Client{
-		Timeout: 10 * time.Second,
-	}
 
 	logger log.Interface
 )
 
 func newVault(addr string) (vault *vapi.Client) {
+	var err error
+
 	vconfig := vapi.DefaultConfig()
 	vconfig.Address = addr
 	vconfig.MaxRetries = 0
 	vconfig.Timeout = 15 * time.Second
-	vconfig.ConfigureTLS(&vapi.TLSConfig{Insecure: conf.TLSSkipVerify})
 
-	var err error
+	if err = vconfig.ConfigureTLS(&vapi.TLSConfig{Insecure: conf.TLSSkipVerify}); err != nil {
+		logger.WithError(err).Fatal("error initializing tls config")
+	}
+
 	if vault, err = vapi.NewClient(vconfig); err != nil {
 		logger.Fatalf("error creating vault client: %v", err)
 	}
