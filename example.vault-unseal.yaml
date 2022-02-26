@@ -54,6 +54,11 @@ email:
   send_addrs:
     - your-alert-group@hostname.com
     - example-user@hostname.com
+  # Skip TLS certificate validation.
+  tls_skip_verify: false
+  # Require TLS for SMTP connections.
+  # The default is opportunistic.
+  mandatory_tls: false
 
 # notifications in vault-unseal queue up to prevent email spam (e.g. 20 alerts
 # in one email). this is the max allotted time an event can be queued before
