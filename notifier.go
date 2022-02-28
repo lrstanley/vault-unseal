@@ -85,7 +85,7 @@ func sendQueue() {
 	var err error
 
 	smtp := mail.NewDialer(conf.Email.Hostname, conf.Email.Port, conf.Email.Username, conf.Email.Password)
-	smtp.TLSConfig = &tls.Config{InsecureSkipVerify: conf.Email.TLSSkipVerify}
+	smtp.TLSConfig = &tls.Config{InsecureSkipVerify: conf.Email.TLSSkipVerify, ServerName: conf.Email.Hostname}
 	if conf.Email.MandatoryTLS {
 		smtp.StartTLSPolicy = mail.MandatoryStartTLS
 	}
