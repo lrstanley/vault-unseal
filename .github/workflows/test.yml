@@ -17,3 +17,8 @@ jobs:
     uses: lrstanley/.github/.github/workflows/lang-go-lint.yml@master
     secrets:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+  docker-test:
+    uses: lrstanley/.github/.github/workflows/docker-release.yml@master
+    secrets:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      push: false

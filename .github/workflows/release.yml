@@ -9,6 +9,7 @@ jobs:
     uses: lrstanley/.github/.github/workflows/docker-release.yml@master
     secrets:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      scan: false
   go-release:
     uses: lrstanley/.github/.github/workflows/lang-go-release.yml@master
     with:
