@@ -159,7 +159,7 @@ Help Options:
   -h, --help             Show this help message
 ```
 
-## TODO
+## :ballot_box_with_check: TODO
 
  - [ ] add option to use vault token/another vault instance to obtain keys (e.g. as long the leader is online)?
  - [ ] memory obfuscating/removing from memory right after unseal?
