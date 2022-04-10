@@ -42,14 +42,14 @@ guidelines outlined in our [security policy][security].
 See [`CONTRIBUTING.md`][contributing] on how to contribute.
 
 <!-- definitions -->
-[coc]: https://github.com/lrstanley/vault-unseal/blob/master/CODE_OF_CONDUCT.md
-[contributing]: https://github.com/lrstanley/vault-unseal/blob/master/CONTRIBUTING.md
+[coc]: https://github.com/lrstanley/vault-unseal/blob/master/.github/CODE_OF_CONDUCT.md
+[contributing]: https://github.com/lrstanley/vault-unseal/blob/master/.github/CONTRIBUTING.md
 [discussions]: https://github.com/lrstanley/vault-unseal/discussions/categories/q-a
 [issues]: https://github.com/lrstanley/vault-unseal/issues/new/choose
 [license]: https://github.com/lrstanley/vault-unseal/blob/master/LICENSE
 [pull-requests]: https://github.com/lrstanley/vault-unseal/issues/new/choose
 [security]: https://github.com/lrstanley/vault-unseal/security/policy
-[support]: https://github.com/lrstanley/vault-unseal/blob/master/SUPPORT.md
+[support]: https://github.com/lrstanley/vault-unseal/blob/master/.github/SUPPORT.md
 
 [xy]: https://meta.stackexchange.com/questions/66377/what-is-the-xy-problem/66378#66378
 [chat]: https://liam.sh/chat

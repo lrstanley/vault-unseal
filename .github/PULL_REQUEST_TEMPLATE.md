@@ -41,8 +41,8 @@
 
 ### 🤝 Requirements
 
-- [ ] ✍ I have read and agree to this projects [Code of Conduct](../../blob/master/CODE_OF_CONDUCT.md).
-- [ ] ✍ I have read and agree to this projects [Contribution Guidelines](../../blob/master/CONTRIBUTING.md).
+- [ ] ✍ I have read and agree to this projects [Code of Conduct](../../blob/master/.github/CODE_OF_CONDUCT.md).
+- [ ] ✍ I have read and agree to this projects [Contribution Guidelines](../../blob/master/.github/CONTRIBUTING.md).
 - [ ] ✍ I have read and agree to the [Developer Certificate of Origin](https://developercertificate.org/).
 - [ ] 🔎 I have performed a self-review of my own changes.
 - [ ] 🎨 My changes follow the style guidelines of this project.

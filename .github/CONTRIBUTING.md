@@ -119,11 +119,11 @@ Below are a few guidelines if you would like to contribute:
    * [Code of Conduct][coc].
 
 <!-- definitions -->
-[coc]: https://github.com/lrstanley/vault-unseal/blob/master/CODE_OF_CONDUCT.md
+[coc]: https://github.com/lrstanley/vault-unseal/blob/master/.github/CODE_OF_CONDUCT.md
 [dco]: https://developercertificate.org/
 [discussions]: https://github.com/lrstanley/vault-unseal/discussions
 [issues]: https://github.com/lrstanley/vault-unseal/issues/new/choose
 [license]: https://github.com/lrstanley/vault-unseal/blob/master/LICENSE
 [pull-requests]: https://github.com/lrstanley/vault-unseal/issues/new/choose
 [security]: https://github.com/lrstanley/vault-unseal/security/policy
-[support]: https://github.com/lrstanley/vault-unseal/blob/master/SUPPORT.md
+[support]: https://github.com/lrstanley/vault-unseal/blob/master/.github/SUPPORT.md
