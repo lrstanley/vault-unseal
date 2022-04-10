@@ -51,9 +51,10 @@ type Config struct {
 	CheckInterval    time.Duration `env:"CHECK_INTERVAL" long:"check-interval" description:"frequency of sealed checks against nodes" yaml:"check_interval"`
 	MaxCheckInterval time.Duration `env:"MAX_CHECK_INTERVAL" long:"max-check-interval" description:"max time that vault-unseal will wait for an unseal check/attempt" yaml:"max_check_interval"`
 
-	Nodes         []string `env:"NODES" long:"nodes" env-delim:"," description:"nodes to connect/provide tokens to (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"vault_nodes"`
-	TLSSkipVerify bool     `env:"TLS_SKIP_VERIFY" long:"tls-skip-verify" description:"disables tls certificate validation: DO NOT DO THIS" yaml:"tls_skip_verify"`
-	Tokens        []string `env:"TOKENS" long:"tokens" env-delim:"," description:"tokens to provide to nodes (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"unseal_tokens"`
+	AllowSingleNode bool     `env:"ALLOW_SINGLE_NODE" long:"allow-single-node" description:"allow vault-unseal to run on a single node" yaml:"allow_single_node" hidden:"true"`
+	Nodes           []string `env:"NODES" long:"nodes" env-delim:"," description:"nodes to connect/provide tokens to (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"vault_nodes"`
+	TLSSkipVerify   bool     `env:"TLS_SKIP_VERIFY" long:"tls-skip-verify" description:"disables tls certificate validation: DO NOT DO THIS" yaml:"tls_skip_verify"`
+	Tokens          []string `env:"TOKENS" long:"tokens" env-delim:"," description:"tokens to provide to nodes (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"unseal_tokens"`
 
 	NotifyMaxElapsed time.Duration `env:"NOTIFY_MAX_ELAPSED" long:"notify-max-elapsed" description:"max time before the notification can be queued before it is sent" yaml:"notify_max_elapsed"`
 	NotifyQueueDelay time.Duration `env:"NOTIFY_QUEUE_DELAY" long:"notify-queue-delay" description:"time we queue the notification to allow as many notifications to be sent in one go (e.g. if no notification within X time, send all notifications)" yaml:"notify_queue_delay"`
@@ -227,7 +228,11 @@ func readConfig(path string) error {
 	}
 
 	if len(conf.Nodes) < 3 {
-		return errors.New("not enough nodes in node list (must have at least 3!)")
+		if !conf.AllowSingleNode {
+			return errors.New("not enough nodes in node list (must have at least 3!)")
+		}
+
+		logger.Warn("running with less than 3 nodes, this is not recommended")
 	}
 
 	if len(conf.Tokens) < 1 {
