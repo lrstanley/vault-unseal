@@ -48,6 +48,7 @@
   - [Why](#grey_question-why)
   - [Solution](#heavy_check_mark-solution)
   - [Installation](#computer-installation)
+    - [Container Images (ghcr)](#whale-container-images-ghcr)
     - [Source](#toolbox-source)
   - [Usage](#gear-usage)
   - [TODO](#todo)
@@ -115,7 +116,11 @@ page for prebuilt versions.
 
 <!-- template:begin:ghcr -->
 <!-- do not edit anything in this "template" block, its auto-generated -->
+### :whale: Container Images (ghcr)
 
+```console
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.0
+```
 <!-- template:end:ghcr -->
 
 ### :toolbox: Source
