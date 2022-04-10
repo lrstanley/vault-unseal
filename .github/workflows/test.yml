@@ -17,7 +17,14 @@ jobs:
     uses: lrstanley/.github/.github/workflows/lang-go-lint.yml@master
     secrets:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+  go-build:
+    needs: [go-test, go-lint]
+    uses: lrstanley/.github/.github/workflows/lang-go-release.yml@master
+    with:
+      has-ghcr: true
+      upload-artifacts: true
   docker-test:
+    needs: [go-test, go-lint]
     uses: lrstanley/.github/.github/workflows/docker-release.yml@master
     secrets:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
