@@ -9,7 +9,7 @@ contact_links:
     url: "https://github.com/lrstanley/vault-unseal/discussions/new?category=show-and-tell"
   - name: "✋ Additional support information"
     about: Looking for something else? Check here.
-    url: "https://github.com/lrstanley/vault-unseal/blob/master/SUPPORT.md"
+    url: "https://github.com/lrstanley/vault-unseal/blob/master/.github/SUPPORT.md"
   - name: "💬 Discord chat"
     about: On-topic and off-topic discussions.
     url: "https://liam.sh/chat"
