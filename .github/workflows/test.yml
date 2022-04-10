@@ -21,5 +21,3 @@ jobs:
     uses: lrstanley/.github/.github/workflows/docker-release.yml@master
     secrets:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-    with:
-      push: false
