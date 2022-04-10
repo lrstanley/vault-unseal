@@ -54,7 +54,7 @@
   - [License](#balance_scale-license)
 <!-- template:end:toc -->
 
-## Why
+## :grey_question: Why
 
 Depending on your use-case for Vault, you may or may not have opted for Vault
 Enterprise. If you have not, auto-unseal functionality for on-prem is currently
@@ -70,7 +70,7 @@ unintentionally (not patching, upgrades, etc), possibly related to crashing or
 malicious intent, a human can investigate at a later time (**not** 3am in the
 morning).
 
-## Solution
+## :heavy_check_mark: Solution
 
 The goal for this project is to find the best way to unseal vault in a way that
 doesn't compromise too much security (a good balance between security and ease of
@@ -108,7 +108,7 @@ With the above configuration:
    `600`), this will not be enough tokens to unseal the vault.
    * vault-unseal runs as root, with root permissions.
 
-## Installation
+## :computer: Installation
 
 Check out the [releases](https://github.com/lrstanley/vault-unseal/releases)
 page for prebuilt versions.
@@ -118,7 +118,7 @@ page for prebuilt versions.
 
 <!-- template:end:ghcr -->
 
-### Source
+### :toolbox: Source
 
 Note that you must have [Go](https://golang.org/doc/install) installed (latest is usually best).
 
@@ -126,7 +126,7 @@ Note that you must have [Go](https://golang.org/doc/install) installed (latest i
     $ make
     $ ./vault-unseal --help
 
-## Usage
+## :gear: Usage
 
 The default configuration path is `/etc/vault-unseal.yaml` when using `deb`/`rpm`.
 If you are not using these package formats, copy the example config file,
