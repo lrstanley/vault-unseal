@@ -1,24 +1,8 @@
-<p align="center">vault-unseal -- auto-unseal utility for Hashicorp Vault</p>
-<p align="center">
-  <a href="https://github.com/lrstanley/vault-unseal/releases"><img src="https://github.com/lrstanley/vault-unseal/workflows/release/badge.svg" alt="Release Status"></a>
-  <a href="https://github.com/lrstanley/vault-unseal/actions"><img src="https://github.com/lrstanley/vault-unseal/workflows/build/badge.svg" alt="Build Status"></a>
-  <a href="https://hub.docker.com/r/lrstanley/vault-unseal/tags"><img src="https://img.shields.io/badge/Docker-lrstanley%2Fvault--unseal%3Alatest-blue.svg" alt="Docker"></a>
-  <a href="https://liam.sh/chat"><img src="https://img.shields.io/badge/Community-Chat%20with%20us-green.svg" alt="Community Chat"></a>
-</p>
+<!-- template:begin:header -->
+<!-- template:end:header -->
 
-## Table of Contents
-- [Why](#why)
-- [Solution](#solution)
-- [Installation](#installation)
-  - [Docker](#docker)
-  - [Ubuntu/Debian](#ubuntudebian)
-  - [CentOS/Redhat](#centosredhat)
-  - [Manual Install](#manual-install)
-  - [Build from source](#build-from-source)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [TODO](#todo)
-- [License](#license)
+<!-- template:begin:toc -->
+<!-- template:end:toc -->
 
 ## Why
 
@@ -77,46 +61,10 @@ With the above configuration:
 ## Installation
 
 Check out the [releases](https://github.com/lrstanley/vault-unseal/releases)
-page for prebuilt versions. vault-unseal should work on ubuntu/debian,
-centos/redhat/fedora, etc. Below are example commands of how you would install
-the utility.
+page for prebuilt versions.
 
-### Docker
-
-```bash
-$ docker run -it --rm lrstanley/vault-unseal:latest
-```
-
-### Ubuntu/Debian
-
-```bash
-$ wget https://liam.sh/ghr/vault-unseal_<version>_linux_amd64.deb
-$ dpkg -i vault-unseal_<version>_linux_amd64.deb
-$ vault-unseal --help
-```
-
-### CentOS/Redhat
-
-```bash
-$ yum localinstall https://liam.sh/ghr/vault-unseal_<version>_linux_amd64.rpm
-$ vault-unseal --help
-```
-
-Some older CentOS versions may require (if you get `Cannot open: <url>. Skipping.`):
-
-```console
-$ wget https://liam.sh/ghr/vault-unseal_<version>_linux_amd64.rpm
-$ yum localinstall vault-unseal_<version>_linux_amd64.rpm
-```
-
-### Manual Install
-
-```bash
-$ wget https://liam.sh/ghr/vault-unseal_<version>_linux_amd64.tar.gz
-$ tar -C /usr/bin/ -xzvf vault-unseal_<version>_linux_amd64.tar.gz vault-unseal
-$ chmod +x /usr/bin/vault-unseal
-$ vault-unseal --help
-```
+<!-- template:begin:ghcr -->
+<!-- template:end:ghcr -->
 
 ### Source
 
@@ -147,38 +95,16 @@ Help Options:
   -h, --help             Show this help message
 ```
 
-## Contributing
-
-Please review the [CONTRIBUTING](CONTRIBUTING.md) doc for submitting issues/a guide
-on submitting pull requests and helping out.
-
 ## TODO
 
  - [ ] add option to use vault token/another vault instance to obtain keys (e.g. as long the leader is online)?
  - [ ] memory obfuscating/removing from memory right after unseal?
 
-## License
+<!-- template:begin:support -->
+<!-- template:end:support -->
 
-```
-MIT License
+<!-- template:begin:contributing -->
+<!-- template:end:contributing -->
 
-Copyright (c) 2018 Liam Stanley <me@liamstanley.io>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+<!-- template:begin:license -->
+<!-- template:end:license -->

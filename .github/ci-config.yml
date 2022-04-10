@@ -1,0 +1,18 @@
+goreleaser:
+  post:
+    nfpms:
+      - homepage: "https://github.com/lrstanley/vault-unseal"
+        maintainer: Liam Stanley <me@liamstanley.io>
+        description: vault-unseal -- Vault auto-unseal utility.
+        license: MIT
+        formats: [deb, rpm]
+        bindir: /usr/bin
+        contents:
+          - src: example.vault-unseal.yaml
+            dst: /etc/vault-unseal.yaml
+            type: config
+          - src: scripts/vault-unseal.systemd
+            dst: /etc/systemd/system/vault-unseal.service
+        scripts:
+          postinstall: "scripts/postinstall.sh"
+          preremove: "scripts/preremove.sh"
