@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"runtime"
@@ -126,7 +125,7 @@ func main() {
 	logWriters := []io.Writer{}
 
 	if conf.Log.Path != "" {
-		logFileWriter, err := os.OpenFile(conf.Log.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		logFileWriter, err := os.OpenFile(conf.Log.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error opening log file %q: %v", conf.Log.Path, err)
 			os.Exit(1)
@@ -139,7 +138,7 @@ func main() {
 	if !conf.Log.Quiet {
 		logWriters = append(logWriters, os.Stdout)
 	} else {
-		logWriters = append(logWriters, ioutil.Discard)
+		logWriters = append(logWriters, io.Discard)
 	}
 
 	if conf.Log.JSON {
@@ -200,7 +199,7 @@ func readConfig(path string) error {
 			return err
 		}
 
-		if perms := permbits.FileMode(fi.Mode()); perms != 0600 {
+		if perms := permbits.FileMode(fi.Mode()); perms != 0o600 {
 			return fmt.Errorf("permissions of %q are insecure: %s, please use 0600", path, perms)
 		}
 
@@ -209,12 +208,12 @@ func readConfig(path string) error {
 			return nil
 		}
 
-		b, err := ioutil.ReadFile(path)
+		b, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
 
-		if err = yaml.Unmarshal(b, conf); err != nil {
+		if err := yaml.Unmarshal(b, conf); err != nil {
 			return err
 		}
 	}
