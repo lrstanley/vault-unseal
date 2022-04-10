@@ -45,11 +45,11 @@
 <!-- do not edit anything in this "template" block, its auto-generated -->
 ## :link: Table of Contents
 
-  - [Why](#why)
-  - [Solution](#solution)
-  - [Installation](#installation)
-   - [Source](#source)
-  - [Usage](#usage)
+  - [Why](#grey_question-why)
+  - [Solution](#heavy_check_mark-solution)
+  - [Installation](#computer-installation)
+   - [Source](#toolbox-source)
+  - [Usage](#gear-usage)
   - [TODO](#todo)
   - [License](#balance_scale-license)
 <!-- template:end:toc -->
