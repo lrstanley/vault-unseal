@@ -26,7 +26,7 @@ clean: ## Cleans up generated files/folders from the build.
 	/bin/rm -rfv "dist/" "${BINARY}"
 
 build: fetch clean ## Compile and generate a binary.
-	CGO_ENABLED=0 go build -ldflags '-d -s -w -extldflags=-static' -tags=netgo,osusergo,static_build -installsuffix netgo -trimpath -o "${BINARY}"
+	CGO_ENABLED=0 go build -ldflags '-d -s -w -extldflags=-static' -tags=netgo,osusergo,static_build -installsuffix netgo -buildvcs=false -trimpath -o "${BINARY}"
 
 debug: clean
 	go run *.go

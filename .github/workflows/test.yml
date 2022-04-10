@@ -7,7 +7,6 @@ on:
     types: [opened, edited, reopened, synchronize, unlocked]
   push:
     branches: [master]
-    tags: [v*]
     paths-ignore: [".gitignore", "**/*.md", ".github/ISSUE_TEMPLATE/**"]
 
 jobs:
