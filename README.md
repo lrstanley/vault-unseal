@@ -1,7 +1,13 @@
+<!-- template:define:options
+{
+  "nodescription": true
+}
+-->
+![logo](https://liam.sh/-/gh/svg/lrstanley/vault-unseal?bg=topography&accent=secure)
+
 <!-- template:begin:header -->
 <!-- do not edit anything in this "template" block, its auto-generated -->
 
-<p align="center">vault-unseal -- auto-unseal utility for Hashicorp Vault</p>
 <p align="center">
   <a href="https://github.com/lrstanley/vault-unseal/releases">
     <img title="Release Downloads" src="https://img.shields.io/github/downloads/lrstanley/vault-unseal/total?style=flat-square">
