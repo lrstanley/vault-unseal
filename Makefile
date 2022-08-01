@@ -1,26 +1,37 @@
 .DEFAULT_GOAL := build
-BINARY=vault-unseal
 
-help:
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-12s\033[0m %s\n", $$1, $$2}'
+export PROJECT := "vault-unseal"
 
-fetch: ## Fetches the necessary dependencies to build.
+license:
+	curl -sL https://liam.sh/-/gh/g/license-header.sh | bash -s
+
+fetch:
 	go mod download
 	go mod tidy
 
-upgrade-deps: ## Upgrade all dependencies to the latest version.
+upgrade-deps:
 	go get -u ./...
+	go mod tidy
 
-upgrade-deps-patch: ## Upgrade all dependencies to the latest patch release.
+upgrade-deps-patch:
 	go get -u=patch ./...
+	go mod tidy
 
-clean: ## Cleans up generated files/folders from the build.
-	/bin/rm -rfv "dist/" "${BINARY}"
+clean:
+	/bin/rm -rfv "dist/" "${PROJECT}"
 
 debug: clean
 	go run *.go
 
-prepare: fetch clean ## Prepare the dependencies needed for a build.
+prepare: fetch clean
+	go generate -x ./...
 
-build: prepare ## Compile and generate a binary.
-	CGO_ENABLED=0 go build -ldflags '-d -s -w -extldflags=-static' -tags=netgo,osusergo,static_build -installsuffix netgo -buildvcs=false -trimpath -o "${BINARY}"
+build: prepare fetch
+	CGO_ENABLED=0 \
+	go build \
+		-ldflags '-d -s -w -extldflags=-static' \
+		-tags=netgo,osusergo,static_build \
+		-installsuffix netgo \
+		-buildvcs=false \
+		-trimpath \
+		-o ${PROJECT}
