@@ -142,9 +142,10 @@ page for prebuilt versions.
 ### :whale: Container Images (ghcr)
 
 ```console
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.2
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:latest
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:master
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.1
-$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:latest
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.0
 ```
 <!-- template:end:ghcr -->
