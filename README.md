@@ -99,13 +99,17 @@ vault. What we want to avoid is giving a single vault-unseal instance enough
 tokens to unseal (to prevent a compromise leading to enough tokens being exposed
 that could unseal the vault). Let's use the following example:
 
+![vault-unseal example diagram](https://ls-screen.s3.us-west-004.backblazeb2.com/2022/08/I8Qc1RCBMd.png)
+
+Explained further:
+
    * `cluster-1` consists of 3 nodes:
       * `node-1`
       * `node-2`
       * `node-3`
-   * `cluster-1` is configured with 5 unseal tokens (tokens `A`, `B`, and `C`), but
-   3 are required to unseal a given vault node.
-   * given there are 3 nodes, and 3 tokens are required:
+   * `cluster-1` is configured with 5 unseal tokens (tokens `A`, `B`, `C`, `D`, `E`), but
+     only 3 are required to unseal a given vault node.
+   * given there are 3 nodes, 3 tokens being required:
       * vault-unseal on `node-1` gets tokens `A` and `B`.
       * vault-unseal on `node-2` gets tokens `B` and `C`.
       * vault-unseal on `node-3` gets tokens `A` and `C`.
