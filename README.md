@@ -19,6 +19,9 @@
     <img title="Last commit" src="https://img.shields.io/github/last-commit/lrstanley/vault-unseal?style=flat-square">
   </a>
 
+
+
+
   <a href="https://github.com/lrstanley/vault-unseal/actions?query=workflow%3Atest+event%3Apush">
     <img title="GitHub Workflow Status (test @ master)" src="https://img.shields.io/github/workflow/status/lrstanley/vault-unseal/test/master?label=test&style=flat-square&event=push">
   </a>
@@ -59,17 +62,16 @@
 <!-- do not edit anything in this "template" block, its auto-generated -->
 ## :link: Table of Contents
 
-- [:link: Table of Contents](#link-table-of-contents)
-- [:grey_question: Why](#grey_question-why)
-- [:heavy_check_mark: Solution](#heavy_check_mark-solution)
-- [:computer: Installation](#computer-installation)
-  - [:whale: Container Images (ghcr)](#whale-container-images-ghcr)
-  - [:toolbox: Source](#toolbox-source)
-- [:gear: Usage](#gear-usage)
-- [:ballot_box_with_check: TODO](#ballot_box_with_check-todo)
-- [:raising_hand_man: Support & Assistance](#raising_hand_man-support--assistance)
-- [:handshake: Contributing](#handshake-contributing)
-- [:balance_scale: License](#balance_scale-license)
+  - [Why](#grey_question-why)
+  - [Solution](#heavy_check_mark-solution)
+  - [Installation](#computer-installation)
+    - [Container Images (ghcr)](#whale-container-images-ghcr)
+    - [Source](#toolbox-source)
+  - [Usage](#gear-usage)
+  - [TODO](#ballot_box_with_check-todo)
+  - [Support &amp; Assistance](#raising_hand_man-support--assistance)
+  - [Contributing](#handshake-contributing)
+  - [License](#balance_scale-license)
 <!-- template:end:toc -->
 
 ## :grey_question: Why
@@ -141,11 +143,11 @@ page for prebuilt versions.
 ### :whale: Container Images (ghcr)
 
 ```console
-docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.2
-docker run -it --rm ghcr.io/lrstanley/vault-unseal:latest
-docker run -it --rm ghcr.io/lrstanley/vault-unseal:master
-docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.1
-docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.0
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.2
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:latest
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:master
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.1
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.0
 ```
 <!-- template:end:ghcr -->
 
@@ -187,24 +189,24 @@ Help Options:
 <!-- do not edit anything in this "template" block, its auto-generated -->
 ## :raising_hand_man: Support & Assistance
 
-- :heart: Please review the [Code of Conduct](.github/CODE_OF_CONDUCT.md) for
+* :heart: Please review the [Code of Conduct](.github/CODE_OF_CONDUCT.md) for
      guidelines on ensuring everyone has the best experience interacting with
      the community.
-- :raising_hand_man: Take a look at the [support](.github/SUPPORT.md) document on
+* :raising_hand_man: Take a look at the [support](.github/SUPPORT.md) document on
      guidelines for tips on how to ask the right questions.
-- :lady_beetle: For all features/bugs/issues/questions/etc, [head over here](https://github.com/lrstanley/vault-unseal/issues/new/choose).
+* :lady_beetle: For all features/bugs/issues/questions/etc, [head over here](https://github.com/lrstanley/vault-unseal/issues/new/choose).
 <!-- template:end:support -->
 
 <!-- template:begin:contributing -->
 <!-- do not edit anything in this "template" block, its auto-generated -->
 ## :handshake: Contributing
 
-- :heart: Please review the [Code of Conduct](.github/CODE_OF_CONDUCT.md) for guidelines
+* :heart: Please review the [Code of Conduct](.github/CODE_OF_CONDUCT.md) for guidelines
      on ensuring everyone has the best experience interacting with the
     community.
-- :clipboard: Please review the [contributing](.github/CONTRIBUTING.md) doc for submitting
+* :clipboard: Please review the [contributing](.github/CONTRIBUTING.md) doc for submitting
      issues/a guide on submitting pull requests and helping out.
-- :old_key: For anything security related, please review this repositories [security policy](https://github.com/lrstanley/vault-unseal/security/policy).
+* :old_key: For anything security related, please review this repositories [security policy](https://github.com/lrstanley/vault-unseal/security/policy).
 <!-- template:end:contributing -->
 
 <!-- template:begin:license -->
