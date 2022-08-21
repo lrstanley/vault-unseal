@@ -19,9 +19,6 @@
     <img title="Last commit" src="https://img.shields.io/github/last-commit/lrstanley/vault-unseal?style=flat-square">
   </a>
 
-
-
-
   <a href="https://github.com/lrstanley/vault-unseal/actions?query=workflow%3Atest+event%3Apush">
     <img title="GitHub Workflow Status (test @ master)" src="https://img.shields.io/github/workflow/status/lrstanley/vault-unseal/test/master?label=test&style=flat-square&event=push">
   </a>
@@ -62,16 +59,17 @@
 <!-- do not edit anything in this "template" block, its auto-generated -->
 ## :link: Table of Contents
 
-  - [Why](#grey_question-why)
-  - [Solution](#heavy_check_mark-solution)
-  - [Installation](#computer-installation)
-    - [Container Images (ghcr)](#whale-container-images-ghcr)
-    - [Source](#toolbox-source)
-  - [Usage](#gear-usage)
-  - [TODO](#ballot_box_with_check-todo)
-  - [Support &amp; Assistance](#raising_hand_man-support--assistance)
-  - [Contributing](#handshake-contributing)
-  - [License](#balance_scale-license)
+- [:link: Table of Contents](#link-table-of-contents)
+- [:grey_question: Why](#grey_question-why)
+- [:heavy_check_mark: Solution](#heavy_check_mark-solution)
+- [:computer: Installation](#computer-installation)
+  - [:whale: Container Images (ghcr)](#whale-container-images-ghcr)
+  - [:toolbox: Source](#toolbox-source)
+- [:gear: Usage](#gear-usage)
+- [:ballot_box_with_check: TODO](#ballot_box_with_check-todo)
+- [:raising_hand_man: Support & Assistance](#raising_hand_man-support--assistance)
+- [:handshake: Contributing](#handshake-contributing)
+- [:balance_scale: License](#balance_scale-license)
 <!-- template:end:toc -->
 
 ## :grey_question: Why
@@ -105,32 +103,33 @@ vault. What we want to avoid is giving a single vault-unseal instance enough
 tokens to unseal (to prevent a compromise leading to enough tokens being exposed
 that could unseal the vault). Let's use the following example:
 
-![vault-unseal example diagram](https://ls-screen.s3.us-west-004.backblazeb2.com/2022/08/I8Qc1RCBMd.png)
+![vault-unseal example diagram](https://cdn.liam.sh/share/2022/08/I8Qc1RCBMd.png)
 
 Explained further:
 
-   * `cluster-1` consists of 3 nodes:
-      * `node-1`
-      * `node-2`
-      * `node-3`
-   * `cluster-1` is configured with 5 unseal tokens (tokens `A`, `B`, `C`, `D`, `E`), but
+- `cluster-1` consists of 3 nodes:
+  - `node-1`
+  - `node-2`
+  - `node-3`
+- `cluster-1` is configured with 5 unseal tokens (tokens `A`, `B`, `C`, `D`, `E`), but
      only 3 are required to unseal a given vault node.
-   * given there are 3 nodes, 3 tokens being required:
-      * vault-unseal on `node-1` gets tokens `A` and `B`.
-      * vault-unseal on `node-2` gets tokens `B` and `C`.
-      * vault-unseal on `node-3` gets tokens `A` and `C`.
+- given there are 3 nodes, 3 tokens being required:
+  - vault-unseal on `node-1` gets tokens `A` and `B`.
+  - vault-unseal on `node-2` gets tokens `B` and `C`.
+  - vault-unseal on `node-3` gets tokens `A` and `C`.
 
 With the above configuration:
-   * Given each vault-unseal node, each node has two tokens.
-   * Given the tokens provided to vault-unseal, each token (`A`, `B`, and `C`), there
+
+- Given each vault-unseal node, each node has two tokens.
+- Given the tokens provided to vault-unseal, each token (`A`, `B`, and `C`), there
    are two instances of that token across nodes in the cluster.
-   * If `node-1` is completely hard-offline, nodes `node-2` and `node-3` should have
+- If `node-1` is completely hard-offline, nodes `node-2` and `node-3` should have
    all three tokens, so if the other two nodes reboot, as long as vault-unseal starts
    up on those nodes, vault-unseal will be able to unseal both.
-   * If `node-2` becomes compromised, and the tokens are read from the config
+- If `node-2` becomes compromised, and the tokens are read from the config
    file (note: vault-unseal **will not start** if the permissions on the file aren't
    `600`), this will not be enough tokens to unseal the vault.
-   * vault-unseal runs as root, with root permissions.
+- vault-unseal runs as root, with root permissions.
 
 ## :computer: Installation
 
@@ -142,11 +141,11 @@ page for prebuilt versions.
 ### :whale: Container Images (ghcr)
 
 ```console
-$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.2
-$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:latest
-$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:master
-$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.1
-$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.0
+docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.2
+docker run -it --rm ghcr.io/lrstanley/vault-unseal:latest
+docker run -it --rm ghcr.io/lrstanley/vault-unseal:master
+docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.1
+docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.0
 ```
 <!-- template:end:ghcr -->
 
@@ -154,9 +153,9 @@ $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.0
 
 Note that you must have [Go](https://golang.org/doc/install) installed (latest is usually best).
 
-    $ git clone https://github.com/lrstanley/vault-unseal.git && cd vault-unseal
-    $ make
-    $ ./vault-unseal --help
+    git clone https://github.com/lrstanley/vault-unseal.git && cd vault-unseal
+    make
+    ./vault-unseal --help
 
 ## :gear: Usage
 
@@ -181,31 +180,31 @@ Help Options:
 
 ## :ballot_box_with_check: TODO
 
- - [ ] add option to use vault token/another vault instance to obtain keys (e.g. as long the leader is online)?
- - [ ] memory obfuscating/removing from memory right after unseal?
+- [ ] add option to use vault token/another vault instance to obtain keys (e.g. as long the leader is online)?
+- [ ] memory obfuscating/removing from memory right after unseal?
 
 <!-- template:begin:support -->
 <!-- do not edit anything in this "template" block, its auto-generated -->
 ## :raising_hand_man: Support & Assistance
 
-* :heart: Please review the [Code of Conduct](.github/CODE_OF_CONDUCT.md) for
+- :heart: Please review the [Code of Conduct](.github/CODE_OF_CONDUCT.md) for
      guidelines on ensuring everyone has the best experience interacting with
      the community.
-* :raising_hand_man: Take a look at the [support](.github/SUPPORT.md) document on
+- :raising_hand_man: Take a look at the [support](.github/SUPPORT.md) document on
      guidelines for tips on how to ask the right questions.
-* :lady_beetle: For all features/bugs/issues/questions/etc, [head over here](https://github.com/lrstanley/vault-unseal/issues/new/choose).
+- :lady_beetle: For all features/bugs/issues/questions/etc, [head over here](https://github.com/lrstanley/vault-unseal/issues/new/choose).
 <!-- template:end:support -->
 
 <!-- template:begin:contributing -->
 <!-- do not edit anything in this "template" block, its auto-generated -->
 ## :handshake: Contributing
 
-* :heart: Please review the [Code of Conduct](.github/CODE_OF_CONDUCT.md) for guidelines
+- :heart: Please review the [Code of Conduct](.github/CODE_OF_CONDUCT.md) for guidelines
      on ensuring everyone has the best experience interacting with the
     community.
-* :clipboard: Please review the [contributing](.github/CONTRIBUTING.md) doc for submitting
+- :clipboard: Please review the [contributing](.github/CONTRIBUTING.md) doc for submitting
      issues/a guide on submitting pull requests and helping out.
-* :old_key: For anything security related, please review this repositories [security policy](https://github.com/lrstanley/vault-unseal/security/policy).
+- :old_key: For anything security related, please review this repositories [security policy](https://github.com/lrstanley/vault-unseal/security/policy).
 <!-- template:end:contributing -->
 
 <!-- template:begin:license -->
