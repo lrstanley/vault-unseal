@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -160,15 +161,15 @@ func main() {
 	}
 
 	var wg sync.WaitGroup
-	done := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
 
 	for _, addr := range conf.Nodes {
 		logger.WithField("addr", addr).Info("invoking worker")
 		wg.Add(1)
-		go worker(done, &wg, addr)
+		go worker(ctx, &wg, addr)
 	}
 
-	go notifier(done, &wg)
+	go notifier(ctx, &wg)
 
 	if conf.ConfigPath != "" {
 		go func() {
@@ -184,7 +185,7 @@ func main() {
 
 	go func() {
 		catch()
-		close(done)
+		cancel()
 	}()
 
 	wg.Wait()
@@ -250,6 +251,13 @@ func readConfig(path string) error {
 		if conf.Email.Hostname == "" || conf.Email.FromAddr == "" {
 			return errors.New("email hostname or from address is empty")
 		}
+	}
+
+	if conf.NotifyQueueDelay < 10*time.Second {
+		conf.NotifyQueueDelay = 10 * time.Second
+	}
+	if conf.NotifyQueueDelay > 10*time.Minute {
+		conf.NotifyQueueDelay = 10 * time.Minute
 	}
 
 	if path != "" {

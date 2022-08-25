@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -38,7 +39,7 @@ func notify(err error) {
 	notifyCh <- err
 }
 
-func notifier(done chan struct{}, wg *sync.WaitGroup) {
+func notifier(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	logger.Info("starting notifier")
@@ -53,7 +54,7 @@ func notifier(done chan struct{}, wg *sync.WaitGroup) {
 	// be called, and events will continue to build up forever.
 	for {
 		select {
-		case <-done:
+		case <-ctx.Done():
 			sendQueue()
 			return
 		case err := <-notifyCh:

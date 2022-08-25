@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"sync"
@@ -13,7 +14,7 @@ import (
 	"github.com/apex/log"
 )
 
-func worker(done <-chan struct{}, wg *sync.WaitGroup, addr string) {
+func worker(ctx context.Context, wg *sync.WaitGroup, addr string) {
 	defer wg.Done()
 
 	client := newVault(addr)
@@ -35,7 +36,7 @@ func worker(done <-chan struct{}, wg *sync.WaitGroup, addr string) {
 		}
 
 		select {
-		case <-done:
+		case <-ctx.Done():
 			logger.WithField("addr", addr).Info("closing worker")
 			return
 		case <-time.After(conf.CheckInterval + errDelay):

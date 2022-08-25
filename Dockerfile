@@ -3,7 +3,7 @@ FROM golang:alpine as build
 WORKDIR /build
 RUN apk add --no-cache make
 COPY go.sum go.mod Makefile /build/
-RUN make fetch
+RUN make go-fetch
 COPY . /build/
 RUN make
 

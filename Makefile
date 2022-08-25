@@ -5,7 +5,7 @@ export PROJECT := "vault-unseal"
 license:
 	curl -sL https://liam.sh/-/gh/g/license-header.sh | bash -s
 
-fetch:
+go-fetch:
 	go mod download
 	go mod tidy
 
@@ -20,13 +20,20 @@ upgrade-deps-patch:
 clean:
 	/bin/rm -rfv "dist/" "${PROJECT}"
 
-debug: clean
-	go run *.go
+go-dlv: go-prepare
+	dlv debug \
+		--headless --listen=:2345 \
+		--api-version=2 --log \
+		--allow-non-terminal-interactive \
+		${PACKAGE} -- --debug
 
-prepare: fetch clean
+go-debug: clean
+	go run *.go --debug
+
+go-prepare: go-fetch clean
 	go generate -x ./...
 
-build: prepare fetch
+build: go-prepare go-fetch
 	CGO_ENABLED=0 \
 	go build \
 		-ldflags '-d -s -w -extldflags=-static' \
