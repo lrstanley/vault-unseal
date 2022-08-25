@@ -83,15 +83,15 @@ Below are a few guidelines if you would like to contribute:
 
 
 
+
+
+
 ### :whale: Dockerfile
 
    * Follow container best practices, like [keeping images as small as possible](https://phoenixnap.com/kb/docker-image-size).
    * This project uses [shellcheck](https://github.com/koalaman/shellcheck)
      for linting `Dockerfile`'s. You can also use native docker extensions.
      This is available in VSCode [here](https://marketplace.visualstudio.com/items?itemName=timonwong.shellcheck).
-
-
-
 
 ### :penguin: Bash/Posix-shell
 
