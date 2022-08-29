@@ -23,7 +23,7 @@ func worker(ctx context.Context, wg *sync.WaitGroup, addr string) {
 	var errDelay time.Duration
 
 	for {
-		errDelay = (30*time.Second)*time.Duration(errCount) + conf.CheckInterval
+		errDelay = (30 * time.Second) * time.Duration(errCount)
 		if errDelay > conf.MaxCheckInterval {
 			errDelay = conf.MaxCheckInterval
 		}
