@@ -3,7 +3,7 @@
   "nodescription": true
 }
 -->
-![logo](https://liam.sh/-/gh/svg/lrstanley/vault-unseal?bg=topography&accent=secure)
+![logo](https://liam.sh/-/gh/svg/lrstanley/vault-unseal?bg=topography&icon=file-icons%3Ahashicorp&icon.height=65&icon.color=rgba%280%2C+184%2C+126%2C+1%29)
 
 <!-- template:begin:header -->
 <!-- do not edit anything in this "template" block, its auto-generated -->
