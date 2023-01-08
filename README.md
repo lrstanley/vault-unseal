@@ -76,15 +76,20 @@
 
 ## :grey_question: Why
 
-Depending on your use-case for Vault, you may or may not have opted for Vault
-Enterprise. If you have not, auto-unseal functionality for on-prem is currently
-only in enterprise (for cloud, it is now in the OSS version). If what you are
-storing in vault isn't sensitive enough to require human intervention, you may
-want to roll your own unseal functionality. The problem with this is it is very
-hard to do safely.
+HashiCorp Vault provides a few options for auto-unsealing clusters:
 
-So, what do we need to solve? we want to auto-unseal a vault, by providing the
-necessary unseal tokens when we find vault is sealed. We also want to make sure
+- [Cloud KMS (AWS, Azure, GCP, and others)](https://developer.hashicorp.com/vault/docs/configuration/seal/awskms) (cloud only)
+- [Hardware Security Modules with PKCS11](https://developer.hashicorp.com/vault/docs/configuration/seal/pkcs11) (enterprise only)
+- [Transit Engine via Vault](https://developer.hashicorp.com/vault/docs/configuration/seal/transit) (requires another vault cluster)
+- [Potentially others](https://developer.hashicorp.com/vault/docs/configuration/seal)
+
+However, depending on your deployment conditions and use-cases of Vault, some of
+the above may not be feasible (cost, network connectivity, complexity). This may
+lead you to want to roll your own unseal functionality, however, it's not easy to
+do in a relatively secure manner.
+
+So, what do we need to solve? We want to auto-unseal a vault cluster, by providing
+the necessary unseal tokens when we find vault is sealed. We also want to make sure
 we're sending notifications when this happens, so if vault was unsealed
 unintentionally (not patching, upgrades, etc), possibly related to crashing or
 malicious intent, a human can investigate at a later time (**not** 3am in the
