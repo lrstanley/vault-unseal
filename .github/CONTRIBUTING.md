@@ -124,6 +124,6 @@ Below are a few guidelines if you would like to contribute:
 [discussions]: https://github.com/lrstanley/vault-unseal/discussions
 [issues]: https://github.com/lrstanley/vault-unseal/issues/new/choose
 [license]: https://github.com/lrstanley/vault-unseal/blob/master/LICENSE
-[pull-requests]: https://github.com/lrstanley/vault-unseal/issues/new/choose
+[pull-requests]: https://github.com/lrstanley/vault-unseal/pulls?q=is%3Aopen+is%3Apr
 [security]: https://github.com/lrstanley/vault-unseal/security/policy
 [support]: https://github.com/lrstanley/vault-unseal/blob/master/.github/SUPPORT.md
