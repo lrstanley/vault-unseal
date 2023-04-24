@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/apex/log v1.9.0
-	github.com/hashicorp/vault/api v1.9.0
+	github.com/hashicorp/vault/api v1.9.1
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/joho/godotenv v1.5.1
 	github.com/phayes/permbits v0.0.0-20190612203442-39d7c581d2ee
