@@ -62,7 +62,7 @@
 <!-- do not edit anything in this "template" block, its auto-generated -->
 ## :link: Table of Contents
 
-  - [Why](#grey_question-why)
+  - [❔ Why](#grey_question-why)
   - [Solution](#heavy_check_mark-solution)
   - [Installation](#computer-installation)
     - [Container Images (ghcr)](#whale-container-images-ghcr)
