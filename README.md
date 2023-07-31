@@ -64,13 +64,13 @@
 
   - [Why](#grey_question-why)
   - [✔️ Solution](#heavy_check_mark-solution)
-  - [Installation](#computer-installation)
+  - [💻 Installation](#computer-installation)
     - [Container Images (ghcr)](#whale-container-images-ghcr)
-    - [🧰 Source](#toolbox-source)
-  - [Usage](#gear-usage)
+    - [Source](#toolbox-source)
+  - [⚙️ Usage](#gear-usage)
   - [TODO](#ballot_box_with_check-todo)
-  - [🙋‍♂️ Support &amp; Assistance](#raising_hand_man-support--assistance)
-  - [🤝 Contributing](#handshake-contributing)
+  - [Support &amp; Assistance](#raising_hand_man-support--assistance)
+  - [Contributing](#handshake-contributing)
   - [License](#balance_scale-license)
 <!-- template:end:toc -->
 
