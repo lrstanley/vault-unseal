@@ -27,10 +27,15 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var (
+const (
 	version = "master"
 	commit  = "latest"
 	date    = "-"
+
+	defaultCheckInterval  = 30 * time.Second
+	defaultTimeout        = 15 * time.Second
+	configRefreshInterval = 15 * time.Second
+	minimumNodes          = 3
 )
 
 // Config is a combo of the flags passed to the cli and the configuration file (if used).
@@ -76,9 +81,7 @@ type Config struct {
 }
 
 var (
-	conf = &Config{
-		CheckInterval: 30 * time.Second,
-	}
+	conf = &Config{CheckInterval: defaultCheckInterval}
 
 	logger log.Interface
 )
@@ -89,7 +92,7 @@ func newVault(addr string) (vault *vapi.Client) {
 	vconfig := vapi.DefaultConfig()
 	vconfig.Address = addr
 	vconfig.MaxRetries = 0
-	vconfig.Timeout = 15 * time.Second
+	vconfig.Timeout = defaultTimeout
 
 	if err = vconfig.ConfigureTLS(&vapi.TLSConfig{Insecure: conf.TLSSkipVerify}); err != nil {
 		logger.WithError(err).Fatal("error initializing tls config")
@@ -105,7 +108,8 @@ func newVault(addr string) (vault *vapi.Client) {
 func main() {
 	var err error
 	if _, err = flags.Parse(conf); err != nil {
-		if FlagErr, ok := err.(*flags.Error); ok && FlagErr.Type == flags.ErrHelp {
+		var ferr *flags.Error
+		if errors.As(err, &ferr) && ferr.Type == flags.ErrHelp {
 			os.Exit(0)
 		}
 		os.Exit(1)
@@ -127,7 +131,8 @@ func main() {
 	logWriters := []io.Writer{}
 
 	if conf.Log.Path != "" {
-		logFileWriter, err := os.OpenFile(conf.Log.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
+		var logFileWriter *os.File
+		logFileWriter, err = os.OpenFile(conf.Log.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error opening log file %q: %v", conf.Log.Path, err)
 			os.Exit(1)
@@ -156,7 +161,8 @@ func main() {
 		"version":     version,
 	})
 
-	if err := readConfig(conf.ConfigPath); err != nil {
+	err = readConfig(conf.ConfigPath)
+	if err != nil {
 		logger.WithError(err).Fatal("error reading config")
 	}
 
@@ -174,9 +180,10 @@ func main() {
 	if conf.ConfigPath != "" {
 		go func() {
 			for {
-				time.Sleep(15 * time.Second)
+				time.Sleep(configRefreshInterval)
 
-				if err := readConfig(conf.ConfigPath); err != nil {
+				err = readConfig(conf.ConfigPath)
+				if err != nil {
 					logger.WithError(err).Fatal("error reading config")
 				}
 			}
@@ -210,12 +217,14 @@ func readConfig(path string) error {
 			return nil
 		}
 
-		b, err := os.ReadFile(path)
+		var b []byte
+		b, err = os.ReadFile(path)
 		if err != nil {
 			return err
 		}
 
-		if err := yaml.Unmarshal(b, conf); err != nil {
+		err = yaml.Unmarshal(b, conf)
+		if err != nil {
 			return err
 		}
 	}
@@ -228,12 +237,12 @@ func readConfig(path string) error {
 		conf.MaxCheckInterval = conf.CheckInterval * time.Duration(2)
 	}
 
-	if len(conf.Nodes) < 3 {
+	if len(conf.Nodes) < minimumNodes {
 		if !conf.AllowSingleNode {
-			return errors.New("not enough nodes in node list (must have at least 3!)")
+			return fmt.Errorf("not enough nodes in node list (must have at least %d)", minimumNodes)
 		}
 
-		logger.Warn("running with less than 3 nodes, this is not recommended")
+		logger.Warnf("running with less than %d nodes, this is not recommended", minimumNodes)
 	}
 
 	if len(conf.Tokens) < 1 {

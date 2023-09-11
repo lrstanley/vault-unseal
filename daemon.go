@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/apex/log"
+	"github.com/hashicorp/vault/api"
 )
 
 func worker(ctx context.Context, wg *sync.WaitGroup, addr string) {
@@ -45,9 +46,9 @@ func worker(ctx context.Context, wg *sync.WaitGroup, addr string) {
 			status, err := client.Sys().SealStatus()
 			if err != nil {
 				errCount++
-				nerr := fmt.Errorf("checking seal status: %v", err)
+				nerr := fmt.Errorf("checking seal status: %w", err)
 
-				if err, ok := err.(net.Error); ok && err.Timeout() {
+				if err, ok := err.(net.Error); ok && err.Timeout() { //nolint:errorlint
 					// It's a network timeout. If it's the first network timeout,
 					// don't notify, just try again. This should help with network
 					// blips.
@@ -81,9 +82,11 @@ func worker(ctx context.Context, wg *sync.WaitGroup, addr string) {
 					"progress": status.Progress,
 					"total":    status.T,
 				}).Info("using unseal token")
-				resp, err := client.Sys().Unseal(token)
+
+				var resp *api.SealStatusResponse
+				resp, err = client.Sys().Unseal(token)
 				if err != nil {
-					notify(fmt.Errorf("using unseal key %d on %v: %v", i+1, addr, err))
+					notify(fmt.Errorf("using unseal key %d on %v: %w", i+1, addr, err))
 					errCount++
 					continue
 				}

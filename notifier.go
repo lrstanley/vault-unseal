@@ -86,14 +86,20 @@ func sendQueue() {
 	var err error
 
 	smtp := mail.NewDialer(conf.Email.Hostname, conf.Email.Port, conf.Email.Username, conf.Email.Password)
-	smtp.TLSConfig = &tls.Config{InsecureSkipVerify: conf.Email.TLSSkipVerify, ServerName: conf.Email.Hostname}
+	smtp.TLSConfig = &tls.Config{
+		InsecureSkipVerify: conf.Email.TLSSkipVerify, //nolint:gosec
+		ServerName:         conf.Email.Hostname,
+	}
+
 	if conf.Email.MandatoryTLS {
 		smtp.StartTLSPolicy = mail.MandatoryStartTLS
 	}
+
 	smtp.LocalName, err = os.Hostname()
 	if err != nil {
 		smtp.LocalName = "localhost"
 	}
+
 	s, err := smtp.Dial()
 	if err != nil {
 		logger.WithError(err).WithFields(log.Fields{
@@ -115,7 +121,8 @@ func sendQueue() {
 		msg.SetHeader("CC", conf.Email.SendAddrs[1:]...)
 	}
 
-	if err := mail.Send(s, msg); err != nil {
+	err = mail.Send(s, msg)
+	if err != nil {
 		logger.WithError(err).Error("unable to send notification")
 		return
 	}
