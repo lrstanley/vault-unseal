@@ -27,11 +27,13 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-const (
+var (
 	version = "master"
 	commit  = "latest"
 	date    = "-"
+)
 
+const (
 	defaultCheckInterval  = 30 * time.Second
 	defaultTimeout        = 15 * time.Second
 	configRefreshInterval = 15 * time.Second
