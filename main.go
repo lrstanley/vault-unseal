@@ -23,6 +23,7 @@ import (
 	vapi "github.com/hashicorp/vault/api"
 	flags "github.com/jessevdk/go-flags"
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/mitchellh/mapstructure"
 	"github.com/phayes/permbits"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -61,8 +62,18 @@ type Config struct {
 
 	AllowSingleNode bool     `env:"ALLOW_SINGLE_NODE" long:"allow-single-node" description:"allow vault-unseal to run on a single node" yaml:"allow_single_node" hidden:"true"`
 	Nodes           []string `env:"NODES" long:"nodes" env-delim:"," description:"nodes to connect/provide tokens to (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"vault_nodes"`
-	TLSSkipVerify   bool     `env:"TLS_SKIP_VERIFY" long:"tls-skip-verify" description:"disables tls certificate validation: DO NOT DO THIS" yaml:"tls_skip_verify"`
-	Tokens          []string `env:"TOKENS" long:"tokens" env-delim:"," description:"tokens to provide to nodes (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"unseal_tokens"`
+
+	TLS struct {
+		CACert        string `env:"TLS_CA_CERT" long:"ca-cert" description:"the path to a PEM-encoded CA cert file to use to verify the Vault server SSL certificate. It takes precedence over CACertBytes and CAPath" yaml:"ca_cert"`
+		CACertBytes   []byte `env:"TLS_CA_CERT_BYTES" long:"ca-cert-bytes" description:"PEM-encoded certificate or bundle. It takes precedence over CAPath" yaml:"ca_cert_bytes"`
+		CAPath        string `env:"TLS_CA_PATH" long:"ca-path" description:"path to a directory of PEM-encoded CA cert files to verify the Vault server SSL certificate" yaml:"ca_path"`
+		ClientCert    string `env:"TLS_CLIENT_CERT" long:"client-cert" description:"path to the certificate for Vault communication" yaml:"client_path"`
+		ClientKey     string `env:"TLS_CLIENT_KEY" long:"client-key" description:"path to the private key for Vault communication" yaml:"client_key"`
+		TLSServerName string `env:"TLS_SERVER_NAME" long:"server-name" description:"if set, is used to set the SNI host when connecting via TLS" yaml:"server_name"`
+		Insecure      bool   `env:"TLS_INSECURE" long:"insecure" description:"enables or disables SSL verification: DO NOT DO THIS" yaml:"insecure"`
+	} `group:"TLS Options" namespace:"tls" yaml:"tls"`
+
+	Tokens []string `env:"TOKENS" long:"tokens" env-delim:"," description:"tokens to provide to nodes (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"unseal_tokens"`
 
 	NotifyMaxElapsed time.Duration `env:"NOTIFY_MAX_ELAPSED" long:"notify-max-elapsed" description:"max time before the notification can be queued before it is sent" yaml:"notify_max_elapsed"`
 	NotifyQueueDelay time.Duration `env:"NOTIFY_QUEUE_DELAY" long:"notify-queue-delay" description:"time we queue the notification to allow as many notifications to be sent in one go (e.g. if no notification within X time, send all notifications)" yaml:"notify_queue_delay"`
@@ -88,6 +99,17 @@ var (
 	logger log.Interface
 )
 
+func ConvertTLSConfigToTLS(src Config, dest *vapi.TLSConfig) error {
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Result: dest,
+	})
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(&src.TLS)
+}
+
 func newVault(addr string) (vault *vapi.Client) {
 	var err error
 
@@ -96,7 +118,14 @@ func newVault(addr string) (vault *vapi.Client) {
 	vconfig.MaxRetries = 0
 	vconfig.Timeout = defaultTimeout
 
-	if err = vconfig.ConfigureTLS(&vapi.TLSConfig{Insecure: conf.TLSSkipVerify}); err != nil {
+	var tlsConfigDest vapi.TLSConfig
+
+	errConvertTLS := ConvertTLSConfigToTLS(*conf, &tlsConfigDest)
+	if errConvertTLS != nil {
+		logger.Fatalf("error configuring vault client TLS: %v", errConvertTLS)
+	}
+
+	if err = vconfig.ConfigureTLS(&tlsConfigDest); err != nil {
 		logger.WithError(err).Fatal("error initializing tls config")
 	}
 

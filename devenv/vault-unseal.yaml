@@ -1,6 +1,7 @@
 email:
   enabled: false
-tls_skip_verify: true
+tls:
+  insecure: true
 unseal_tokens:
   - YOUR_TOKEN_HERE
 vault_nodes:
