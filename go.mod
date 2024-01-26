@@ -7,6 +7,7 @@ require (
 	github.com/hashicorp/vault/api v1.10.0
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/joho/godotenv v1.5.1
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/phayes/permbits v0.0.0-20190612203442-39d7c581d2ee
 	gopkg.in/mail.v2 v2.3.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -33,7 +34,6 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
