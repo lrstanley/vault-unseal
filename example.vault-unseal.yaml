@@ -40,6 +40,15 @@ unseal_tokens:
 # have a certificate which has all of the server hostnames on it.
 tls_skip_verify: false
 
+kubernetes:
+  enabled: false
+  kubeconfig: /home/user/.kube/kubeconfig
+  namespace: vault
+  https: true
+  port: 8200
+  labels:
+    - "app.kubernetes.io/instance=vault"
+
 # email notifications. setting this to false will disable all notifications.
 email:
   enabled: false

@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -25,6 +26,9 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/phayes/permbits"
 	yaml "gopkg.in/yaml.v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var (
@@ -66,6 +70,15 @@ type Config struct {
 
 	NotifyMaxElapsed time.Duration `env:"NOTIFY_MAX_ELAPSED" long:"notify-max-elapsed" description:"max time before the notification can be queued before it is sent" yaml:"notify_max_elapsed"`
 	NotifyQueueDelay time.Duration `env:"NOTIFY_QUEUE_DELAY" long:"notify-queue-delay" description:"time we queue the notification to allow as many notifications to be sent in one go (e.g. if no notification within X time, send all notifications)" yaml:"notify_queue_delay"`
+
+	Kubernetes struct {
+		Enabled    bool     `env:"KUBERNETES_ENABLED" long:"enabled" description:"enables kubernetes mode" yaml:"enabled"`
+		Kubeconfig string   `env:"KUBERNETES_KUBECONFIG" long:"kubeconfig" description:"kubernetes kubeconfig path" yaml:"kubeconfig"`
+		Namespace  string   `env:"KUBERNETES_NAMESPACE" long:"namespace" description:"kubernetes namespace where vault pod can be found" yaml:"namespace"`
+		Https      bool     `env:"KUBERNETES_HTTPS" long:"https" description:"kubernetes pod use HTTPS instead of HTTP" yaml:"https"`
+		Port       int      `env:"KUBERNETES_PORT" long:"port" description:"kubernetes pod port" yaml:"port"`
+		Labels     []string `env:"KUBERNETES_LABELS" long:"labels" description:"Kubernetes label to filter pod" yaml:"labels"`
+	} `group:"Kubernetes Options" namespace:"kubernetes" yaml:"kubernetes"`
 
 	Email struct {
 		Enabled       bool     `env:"EMAIL_ENABLED" long:"enabled" description:"enables email support" yaml:"enabled"`
@@ -171,10 +184,45 @@ func main() {
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
 
-	for _, addr := range conf.Nodes {
-		logger.WithField("addr", addr).Info("invoking worker")
-		wg.Add(1)
-		go worker(ctx, &wg, addr)
+	if conf.Kubernetes.Enabled {
+
+		config, err := clientcmd.BuildConfigFromFlags("", conf.Kubernetes.Kubeconfig)
+		if err != nil {
+			logger.WithError(err).Fatal("error building kubeconfig")
+		}
+
+		kubeClient, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			logger.WithError(err).Fatal("error creating kubernetes client")
+		}
+
+		// discover pods with labelselector
+		pods, err := kubeClient.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{
+			LabelSelector: strings.Join(conf.Kubernetes.Labels, ","),
+		})
+		if err != nil {
+			logger.WithError(err).Fatal("error getting vault pods list")
+		}
+
+		for _, pod := range pods.Items {
+			logger.WithField("addr", pod.Name).Info("invoking worker")
+			wg.Add(1)
+
+			var podUrl string
+			if conf.Kubernetes.Https {
+				podUrl = fmt.Sprintf("https:%s:%d", pod.Name, conf.Kubernetes.Port)
+			} else {
+				podUrl = fmt.Sprintf("http:%s:%d", pod.Name, conf.Kubernetes.Port)
+			}
+
+			go worker_kubernetes(ctx, &wg, kubeClient, pod.Namespace, podUrl)
+		}
+	} else {
+		for _, addr := range conf.Nodes {
+			logger.WithField("addr", addr).Info("invoking worker")
+			wg.Add(1)
+			go worker(ctx, &wg, addr)
+		}
 	}
 
 	go notifier(ctx, &wg)
@@ -239,12 +287,15 @@ func readConfig(path string) error {
 		conf.MaxCheckInterval = conf.CheckInterval * time.Duration(2)
 	}
 
-	if len(conf.Nodes) < minimumNodes {
-		if !conf.AllowSingleNode {
-			return fmt.Errorf("not enough nodes in node list (must have at least %d)", minimumNodes)
-		}
+	// Ignore minimumNodes check in kubernetes mode as we use pod discovery
+	if conf.Kubernetes.Enabled {
+		if len(conf.Nodes) < minimumNodes {
+			if !conf.AllowSingleNode {
+				return fmt.Errorf("not enough nodes in node list (must have at least %d)", minimumNodes)
+			}
 
-		logger.Warnf("running with less than %d nodes, this is not recommended", minimumNodes)
+			logger.Warnf("running with less than %d nodes, this is not recommended", minimumNodes)
+		}
 	}
 
 	if len(conf.Tokens) < 1 {
