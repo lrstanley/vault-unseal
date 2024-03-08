@@ -40,6 +40,11 @@ unseal_tokens:
 # have a certificate which has all of the server hostnames on it.
 tls_skip_verify: false
 
+kubernetes:
+  enabled: false
+  kubeconfig: /home/user/.kube/kubeconfig
+  namespace: vault
+
 # email notifications. setting this to false will disable all notifications.
 email:
   enabled: false

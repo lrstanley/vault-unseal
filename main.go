@@ -25,6 +25,7 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/phayes/permbits"
 	yaml "gopkg.in/yaml.v2"
+	"k8s.io/client-go/kubernetes"
 )
 
 var (
@@ -64,6 +65,8 @@ type Config struct {
 	TLSSkipVerify   bool     `env:"TLS_SKIP_VERIFY" long:"tls-skip-verify" description:"disables tls certificate validation: DO NOT DO THIS" yaml:"tls_skip_verify"`
 	Tokens          []string `env:"TOKENS" long:"tokens" env-delim:"," description:"tokens to provide to nodes (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"unseal_tokens"`
 
+	Kubernetes KubernetesConfig `group:"Kubernetes configuration" namespace:"kubernetes" yaml:"kubernetes"`
+
 	NotifyMaxElapsed time.Duration `env:"NOTIFY_MAX_ELAPSED" long:"notify-max-elapsed" description:"max time before the notification can be queued before it is sent" yaml:"notify_max_elapsed"`
 	NotifyQueueDelay time.Duration `env:"NOTIFY_QUEUE_DELAY" long:"notify-queue-delay" description:"time we queue the notification to allow as many notifications to be sent in one go (e.g. if no notification within X time, send all notifications)" yaml:"notify_queue_delay"`
 
@@ -84,6 +87,8 @@ type Config struct {
 
 var (
 	conf = &Config{CheckInterval: defaultCheckInterval}
+
+	kubeClient *kubernetes.Clientset
 
 	logger log.Interface
 )
@@ -171,10 +176,21 @@ func main() {
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
 
+	if conf.Kubernetes.Enabled {
+		err = createKubeClient(conf.Kubernetes)
+		if err != nil {
+			logger.WithError(err).Fatal("error building kubeconfig")
+		}
+	}
+
 	for _, addr := range conf.Nodes {
 		logger.WithField("addr", addr).Info("invoking worker")
 		wg.Add(1)
-		go worker(ctx, &wg, addr)
+		if conf.Kubernetes.Enabled {
+			go workerKubernetes(ctx, &wg, kubeClient, conf.Kubernetes.Namespace, addr)
+		} else {
+			go worker(ctx, &wg, addr)
+		}
 	}
 
 	go notifier(ctx, &wg)
@@ -237,6 +253,13 @@ func readConfig(path string) error {
 	if conf.MaxCheckInterval < conf.CheckInterval {
 		// Default to 2x.
 		conf.MaxCheckInterval = conf.CheckInterval * time.Duration(2)
+	}
+
+	if conf.Kubernetes.Enabled {
+		err := checkKubernetesConfig(conf.Kubernetes)
+		if err != nil {
+			return err
+		}
 	}
 
 	if len(conf.Nodes) < minimumNodes {
