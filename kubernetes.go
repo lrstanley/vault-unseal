@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"sync"
@@ -14,11 +15,44 @@ import (
 
 	"github.com/apex/log"
 	"github.com/hashicorp/vault/api"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
-func worker_kubernetes(ctx context.Context, wg *sync.WaitGroup, kubeClient *kubernetes.Clientset, namespace string, podAddr string) {
+type KubernetesConfig struct {
+	Enabled    bool   `env:"KUBERNETES_ENABLED" long:"enabled" description:"enables kubernetes mode" yaml:"enabled"`
+	Kubeconfig string `env:"KUBERNETES_KUBECONFIG" long:"kubeconfig" description:"kubernetes kubeconfig path" yaml:"kubeconfig"`
+	Namespace  string `env:"KUBERNETES_NAMESPACE" long:"namespace" description:"kubernetes namespace where vault pod can be found" yaml:"namespace"`
+}
+
+func checkKubernetesConfig(conf KubernetesConfig) error {
+	if conf.Kubeconfig == "" {
+		return errors.New("kubeconfig is empty")
+	}
+
+	if conf.Namespace == "" {
+		return errors.New("namespace is empty")
+	}
+
+	return nil
+}
+
+func createKubeClient(cfg KubernetesConfig) error {
+	kubeConfig, err := clientcmd.BuildConfigFromFlags("", cfg.Kubeconfig)
+	if err != nil {
+		return err
+	}
+
+	kubeClient, err = kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func workerKubernetes(ctx context.Context, wg *sync.WaitGroup, kubeClient *kubernetes.Clientset, namespace string, podAddr string) {
 	defer wg.Done()
 
 	var errCount int
@@ -50,7 +84,7 @@ func worker_kubernetes(ctx context.Context, wg *sync.WaitGroup, kubeClient *kube
 				// if http code is not between (interval included) 200 and 206, the library throw an error
 				// has vault use custom http code to return seal status, we need to handle it
 				// https://developer.hashicorp.com/vault/api-docs/system/health
-				if _, isStatus := err.(*errors.StatusError); !isStatus {
+				if _, isStatus := err.(*kerrors.StatusError); !isStatus {
 					errCount++
 					nerr := fmt.Errorf("checking seal status: %w", err)
 
@@ -105,7 +139,7 @@ func worker_kubernetes(ctx context.Context, wg *sync.WaitGroup, kubeClient *kube
 					// if http code is not between (interval included) 200 and 206, the library throw an error
 					// has vault use custom http code to return seal status, we need to handle it
 					// https://developer.hashicorp.com/vault/api-docs/system/health
-					if _, isStatus := err.(*errors.StatusError); !isStatus {
+					if _, isStatus := err.(*kerrors.StatusError); !isStatus {
 						notify(fmt.Errorf("using unseal key %d on %v: %w", i+1, podAddr, err))
 						errCount++
 						continue
