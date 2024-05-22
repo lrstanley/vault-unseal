@@ -113,9 +113,11 @@ func workerKubernetes(ctx context.Context, wg *sync.WaitGroup, kubeClient *kuber
 				continue
 			}
 
-			logger.WithFields(log.Fields{"podAddr": podAddr, "status": status}).Info("seal status")
-			if !status.Sealed {
+			if status.Sealed {
+				logger.WithFields(log.Fields{"addr": podAddr, "status": "sealed"}).Info("seal status")
+			} else {
 				// Not sealed, don't do anything.
+				logger.WithFields(log.Fields{"addr": podAddr, "status": "unsealed"}).Info("seal status")
 				errCount = 0
 				continue
 			}

@@ -62,9 +62,12 @@ func worker(ctx context.Context, wg *sync.WaitGroup, addr string) {
 				notify(nerr)
 				continue
 			}
-			logger.WithFields(log.Fields{"addr": addr, "status": status}).Info("seal status")
-			if !status.Sealed {
+
+			if status.Sealed {
+				logger.WithFields(log.Fields{"addr": addr, "status": "sealed"}).Info("seal status")
+			} else {
 				// Not sealed, don't do anything.
+				logger.WithFields(log.Fields{"addr": addr, "status": "unsealed"}).Info("seal status")
 				errCount = 0
 				continue
 			}
