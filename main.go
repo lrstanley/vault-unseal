@@ -164,14 +164,17 @@ func main() {
 	}
 
 	logger = initLogger.WithFields(log.Fields{
-		"environment": conf.Environment,
-		"version":     version,
+		"version": version,
 	})
 
 	err = readConfig(conf.ConfigPath)
 	if err != nil {
 		logger.WithError(err).Fatal("error reading config")
 	}
+
+	logger = logger.WithFields(log.Fields{
+		"environment": conf.Environment,
+	})
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
