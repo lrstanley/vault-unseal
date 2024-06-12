@@ -68,6 +68,7 @@
     - [Container Images (ghcr)](#whale-container-images-ghcr)
     - [Source](#toolbox-source)
   - [Usage](#gear-usage)
+  - [Kubernetes proxy verb](#kubernetes-proxy-verb)
   - [TODO](#ballot_box_with_check-todo)
   - [Support &amp; Assistance](#raising_hand_man-support--assistance)
   - [Contributing](#handshake-contributing)
@@ -190,6 +191,12 @@ Application Options:
 Help Options:
   -h, --help             Show this help message
 ```
+
+## :anchor: Kubernetes proxy verb
+
+Vault-unseal supports unsealing nodes in a Kubernetes cluster without exposing them outside of it. To achieve this, vault-unseal uses the [kubernetes proxy verb](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster-services/#discovering-builtin-services).
+
+To create the service account used by vault-unseal, you can refer to the example in `k8s/service_account.yaml`. You just need to adjust the `namespace` and `resourceNames` to suit your needs.
 
 ## :ballot_box_with_check: TODO
 
