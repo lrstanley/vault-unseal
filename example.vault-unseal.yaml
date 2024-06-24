@@ -38,7 +38,8 @@ unseal_tokens:
 
 # skip tls checks for the given vault instance. useful if your instance doesn't
 # have a certificate which has all of the server hostnames on it.
-tls_skip_verify: false
+tls:
+  insecure: false
 
 # email notifications. setting this to false will disable all notifications.
 email:
