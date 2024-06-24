@@ -26,6 +26,7 @@
     <img title="GitHub Workflow Status (test @ master)" src="https://img.shields.io/github/actions/workflow/status/lrstanley/vault-unseal/test.yml?branch=master&label=test&style=flat-square">
   </a>
 
+
   <a href="https://codecov.io/gh/lrstanley/vault-unseal">
     <img title="Code Coverage" src="https://img.shields.io/codecov/c/github/lrstanley/vault-unseal/master?style=flat-square">
   </a>
@@ -148,9 +149,10 @@ page for prebuilt versions.
 ### :whale: Container Images (ghcr)
 
 ```console
-$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.5.0
-$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:latest
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:master
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.5.1
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:latest
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.5.0
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.4.1
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.4.0
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.3.0
@@ -227,7 +229,7 @@ Help Options:
 ```
 MIT License
 
-Copyright (c) 2018 Liam Stanley <me@liamstanley.io>
+Copyright (c) 2018 Liam Stanley <liam@liam.sh>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
