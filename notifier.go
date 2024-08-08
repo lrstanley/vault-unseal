@@ -7,7 +7,6 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -29,7 +28,7 @@ type notifyError struct {
 }
 
 func notify(err error) {
-	err = errors.New("error: " + err.Error())
+	err = fmt.Errorf("error: %w", err)
 	logger.WithError(err).Error("notify-error")
 
 	if !conf.Email.Enabled {
@@ -79,7 +78,7 @@ func sendQueue() {
 	text := `vault-unseal ran into errors when attempting to check seal status/unseal. here are the errors:
 `
 
-	for i := 0; i < len(notifyQueue); i++ {
+	for i := range len(notifyQueue) {
 		text += fmt.Sprintf("\n%s :: %v", notifyQueue[i].timestamp.Format(time.RFC822), notifyQueue[i].err)
 	}
 

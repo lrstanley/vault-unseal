@@ -9,12 +9,8 @@ go-fetch:
 	go mod download
 	go mod tidy
 
-upgrade-deps:
+up:
 	go get -u ./...
-	go mod tidy
-
-upgrade-deps-patch:
-	go get -u=patch ./...
 	go mod tidy
 
 clean:
