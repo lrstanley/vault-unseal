@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/apex/log v1.9.0
-	github.com/hashicorp/vault/api v1.14.0
+	github.com/hashicorp/vault/api v1.15.0
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/joho/godotenv v1.5.1
 	gopkg.in/mail.v2 v2.3.1
@@ -12,7 +12,7 @@ require (
 )
 
 require (
-	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
+	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.4 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/go-test/deep v1.0.7 // indirect
