@@ -44,6 +44,9 @@ const (
 	defaultTimeout        = 15 * time.Second
 	configRefreshInterval = 15 * time.Second
 	minimumNodes          = 3
+
+	appNameLabel  = "app.kubernetes.io/name"
+	instanceLabel = "app.kubernetes.io/instance"
 )
 
 // Config is a combo of the flags passed to the cli and the configuration file (if used).
@@ -142,7 +145,9 @@ func getVaultPodsForService() ([]string, error) {
 	}
 
 	services, err := client.CoreV1().Services(defaultVaultName).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: labels.Set{"app.kubernetes.io/name": defaultVaultName}.String(),
+		LabelSelector: labels.Set{
+			appNameLabel: defaultVaultName,
+		}.String(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error getting services: %w", err)
@@ -156,8 +161,8 @@ func getVaultPodsForService() ([]string, error) {
 	for _, service := range services.Items {
 		pods, err := client.CoreV1().Pods(defaultVaultName).List(context.TODO(), metav1.ListOptions{
 			LabelSelector: labels.Set{
-				"app.kubernetes.io/name":     defaultVaultName,
-				"app.kubernetes.io/instance": service.Name,
+				appNameLabel:  defaultVaultName,
+				instanceLabel: service.Name,
 			}.String(),
 		})
 		if err != nil {
@@ -199,7 +204,7 @@ func monitorService(ctx context.Context, workerIps *sync.Map, wg *sync.WaitGroup
 		case <-time.After(5 * time.Second):
 			services, err := client.CoreV1().Services(defaultVaultName).List(context.TODO(), metav1.ListOptions{
 				LabelSelector: labels.Set{
-					"app.kubernetes.io/name": defaultVaultName,
+					appNameLabel: defaultVaultName,
 				}.String(),
 			})
 			if err != nil {
@@ -222,8 +227,8 @@ func monitorService(ctx context.Context, workerIps *sync.Map, wg *sync.WaitGroup
 
 				pods, err := client.CoreV1().Pods(defaultVaultName).List(context.TODO(), metav1.ListOptions{
 					LabelSelector: labels.Set{
-						"app.kubernetes.io/name":     defaultVaultName,
-						"app.kubernetes.io/instance": service.Name,
+						appNameLabel:  defaultVaultName,
+						instanceLabel: service.Name,
 					}.String(),
 				})
 				if err != nil {
