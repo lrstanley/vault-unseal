@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -24,11 +25,11 @@ import (
 	flags "github.com/jessevdk/go-flags"
 	_ "github.com/joho/godotenv/autoload"
 	yaml "gopkg.in/yaml.v3"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 var (
@@ -38,6 +39,7 @@ var (
 )
 
 const (
+	defaultVaultName      = "vault"
 	defaultCheckInterval  = 1 * time.Second
 	defaultTimeout        = 15 * time.Second
 	configRefreshInterval = 1 * time.Second
@@ -112,27 +114,29 @@ func newVault(addr string) (vault *vapi.Client) {
 	return vault
 }
 
-func getVaultPodsForService() ([]string, error) {
-	var (
-		kubeconfig string
-		err        error
-	)
-	if kubeconfig = os.Getenv("KUBECONFIG"); kubeconfig == "" {
-		kubeconfig = os.ExpandEnv("$HOME/source/personal/b3-prod-1-config.yaml")
-	}
-
-	config := new(rest.Config)
-	if config, err = clientcmd.BuildConfigFromFlags("", kubeconfig); err != nil {
-		return nil, fmt.Errorf("error building kubernetes config: %w", err)
+func getKubeClient() (*kubernetes.Clientset, error) {
+	kubeconfig, err := rest.InClusterConfig()
+	if err != nil {
+		logger.WithError(err).Warn("error getting in-cluster config, falling back to kubeconfig")
+		os.Exit(1)
 	}
 
 	client := new(kubernetes.Clientset)
-	if client, err = kubernetes.NewForConfig(config); err != nil {
-		return nil, fmt.Errorf("error creating kubernetes client: %w", err)
+	if client, err = kubernetes.NewForConfig(kubeconfig); err != nil {
+		logger.WithError(err).Fatal("error creating kubernetes client")
 	}
 
-	services, err := client.CoreV1().Services("vault").List(context.TODO(), metav1.ListOptions{
-		LabelSelector: labels.Set{"app.kubernetes.io/name": "vault"}.String(),
+	return client, nil
+}
+
+func getVaultPodsForService() ([]string, error) {
+	client, err := getKubeClient()
+	if err != nil {
+		return nil, fmt.Errorf("error getting kubernetes client: %w", err)
+	}
+
+	services, err := client.CoreV1().Services(defaultVaultName).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labels.Set{"app.kubernetes.io/name": defaultVaultName}.String(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error getting services: %w", err)
@@ -144,26 +148,132 @@ func getVaultPodsForService() ([]string, error) {
 
 	podAddrs := make([]string, 0)
 	for _, service := range services.Items {
-		pods, err := client.CoreV1().Pods("vault").List(context.TODO(), metav1.ListOptions{
-			LabelSelector: labels.Set{"app.kubernetes.io/name": "vault", "app.kubernetes.io/instance": service.Name}.String(),
+		pods, err := client.CoreV1().Pods(defaultVaultName).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: labels.Set{
+				"app.kubernetes.io/name":     defaultVaultName,
+				"app.kubernetes.io/instance": service.Name,
+			}.String(),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error getting pods for service %q: %w", service.Name, err)
 		}
 
 		for _, pod := range pods.Items {
-			podAddrs = append(podAddrs, fmt.Sprintf("https://%s:%d", pod.Status.PodIP, 8200))
+			podAddrs = append(podAddrs, getVaultAddr(service.Spec.Ports, pod.Status.PodIP))
 		}
 	}
 
 	return podAddrs, nil
 }
 
+func getVaultAddr(service []core.ServicePort, ip string) string {
+	const targetScheme = "http"
+
+	for _, port := range service {
+		if port.Name == targetScheme {
+			return fmt.Sprintf("%s://%s:%d", port.Protocol, ip, port.Port)
+		}
+	}
+
+	return fmt.Sprintf("%s://%s:8200", targetScheme, ip) // Default to 8200 on http.
+}
+
+// monitorService is a function that will monitor a service for changes to the pods attached to it.
+func monitorService(ctx context.Context, workerIps *sync.Map, wg *sync.WaitGroup) {
+	client, err := getKubeClient()
+	if err != nil {
+		logger.WithError(err).Fatal("error getting kubernetes client")
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			logger.Info("closing service monitor")
+			return
+		case <-time.After(5 * time.Second):
+			services, err := client.CoreV1().Services(defaultVaultName).List(context.TODO(), metav1.ListOptions{
+				LabelSelector: labels.Set{
+					"app.kubernetes.io/name": defaultVaultName,
+				}.String(),
+			})
+			if err != nil {
+				logger.WithError(err).Error("error getting services")
+				continue
+			}
+
+			if len(services.Items) == 0 {
+				logger.Warn("no services found")
+				continue
+			}
+
+			fmt.Println(workerIps)
+
+			svcName := strings.Split(conf.VaultService, ".")[1]
+			for _, service := range services.Items {
+				if service.Name != svcName {
+					continue
+				}
+
+				pods, err := client.CoreV1().Pods(defaultVaultName).List(context.TODO(), metav1.ListOptions{
+					LabelSelector: labels.Set{
+						"app.kubernetes.io/name":     defaultVaultName,
+						"app.kubernetes.io/instance": service.Name,
+					}.String(),
+				})
+				if err != nil {
+					logger.WithError(err).Errorf("error getting pods for service %q", service.Name)
+					continue
+				}
+
+				// Check for new pods.
+				for _, pod := range pods.Items {
+					addr := getVaultAddr(service.Spec.Ports, pod.Status.PodIP)
+					if _, ok := workerIps.Load(addr); !ok {
+						logger.WithField("addr", addr).Info("adding worker")
+						wg.Add(1)
+						workerCtx, workerCancel := context.WithCancel(ctx)
+						workerIps.Store(addr, workerCancel)
+						go worker(workerCtx, wg, addr)
+					}
+				}
+
+				// Check for removed pods.
+				workerIps.Range(func(key, value interface{}) bool {
+					addr, ok := key.(string)
+					if !ok {
+						// This should never happen. Do not stop the loop.
+						return true
+					}
+
+					found := false
+					for _, pod := range pods.Items {
+						podAddr := getVaultAddr(service.Spec.Ports, pod.Status.PodIP)
+						if addr == podAddr {
+							found = true
+							break
+						}
+					}
+
+					if !found {
+						logger.WithField("addr", addr).Info("removing worker")
+						value.(context.CancelFunc)()
+						workerIps.Delete(addr)
+					}
+
+					return true
+				})
+			}
+
+			fmt.Println(workerIps)
+		}
+	}
+}
+
 func main() {
 	var err error
 	if _, err = flags.Parse(conf); err != nil {
 		var ferr *flags.Error
-		if errors.As(err, &ferr) && ferr.Type == flags.ErrHelp {
+		if errors.As(err, &ferr) && errors.Is(ferr.Type, flags.ErrHelp) {
 			os.Exit(0)
 		}
 		os.Exit(1)
@@ -182,13 +292,13 @@ func main() {
 		initLogger.Level = log.MustParseLevel(conf.Log.Level)
 	}
 
-	logWriters := []io.Writer{}
+	logWriters := make([]io.Writer, 0)
 
 	if conf.Log.Path != "" {
 		var logFileWriter *os.File
 		logFileWriter, err = os.OpenFile(conf.Log.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error opening log file %q: %v", conf.Log.Path, err)
+			_, _ = fmt.Fprintf(os.Stderr, "error opening log file %q: %v", conf.Log.Path, err)
 			os.Exit(1)
 		}
 		defer logFileWriter.Close()
@@ -228,17 +338,26 @@ func main() {
 	}
 
 	// Get the vault pods that are attached to the given service.
-	podAddrs, err := getVaultPodsForService()
-	if err != nil {
-		logger.WithError(err).Fatal("error getting vault pods")
-	} else if len(podAddrs) > 0 {
-		conf.Nodes = append(conf.Nodes, podAddrs...)
+	if conf.VaultService != "" {
+		podAddrs, err := getVaultPodsForService()
+		if err != nil {
+			logger.WithError(err).Fatal("error getting vault pods")
+		} else if len(podAddrs) > 0 {
+			conf.Nodes = append(conf.Nodes, podAddrs...)
+		}
 	}
 
+	workers := new(sync.Map)
 	for _, addr := range conf.Nodes {
 		logger.WithField("addr", addr).Info("invoking worker")
 		wg.Add(1)
-		go worker(ctx, &wg, addr)
+		workerCtx, workerCancel := context.WithCancel(ctx)
+		workers.Store(addr, workerCancel)
+		go worker(workerCtx, &wg, addr)
+	}
+
+	if conf.VaultService != "" {
+		go monitorService(ctx, workers, &wg)
 	}
 
 	go notifier(ctx, &wg)
@@ -303,7 +422,7 @@ func readConfig(path string) error {
 		conf.MaxCheckInterval = conf.CheckInterval * time.Duration(2)
 	}
 
-	if len(conf.Nodes) < minimumNodes && conf.VaultService != "" {
+	if len(conf.Nodes) < minimumNodes && conf.VaultService == "" {
 		if !conf.AllowSingleNode {
 			return fmt.Errorf("not enough nodes in node list (must have at least %d)", minimumNodes)
 		}
