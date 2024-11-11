@@ -48,6 +48,8 @@ const (
 
 	appNameLabel  = "app.kubernetes.io/name"
 	instanceLabel = "app.kubernetes.io/instance"
+
+	defaultNamespace = "vault"
 )
 
 // Config is a combo of the flags passed to the cli and the configuration file (if used).
@@ -122,13 +124,12 @@ func newVault(addr string) (vault *vapi.Client) {
 //
 // This function will attempt to get the in-cluster config. The ServiceAccount requires the
 // following permissions:
-// - `get` on `services` in the `default` namespace
-// - `get` on `pods` in the `default` namespace
+// - `get` on `services` in all namespaces
+// - `get` on `pods` in all namespaces
 func getKubeClient() (*kubernetes.Clientset, error) {
 	kubeconfig, err := rest.InClusterConfig()
 	if err != nil {
-		logger.WithError(err).Warn("error getting in-cluster config, falling back to kubeconfig")
-		os.Exit(1)
+		logger.WithError(err).Fatal("error getting in-cluster config")
 	}
 
 	client := new(kubernetes.Clientset)
@@ -145,7 +146,7 @@ func getVaultPodsForService() ([]string, error) {
 		return nil, fmt.Errorf("error getting kubernetes client: %w", err)
 	}
 
-	services, err := client.CoreV1().Services(defaultVaultName).List(context.TODO(), metav1.ListOptions{
+	services, err := client.CoreV1().Services(getNamespaceFromConfig()).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: labels.Set{
 			appNameLabel: defaultVaultName,
 		}.String(),
@@ -160,7 +161,7 @@ func getVaultPodsForService() ([]string, error) {
 
 	podAddrs := make([]string, 0)
 	for _, service := range services.Items {
-		pods, err := client.CoreV1().Pods(defaultVaultName).List(context.TODO(), metav1.ListOptions{
+		pods, err := client.CoreV1().Pods(getNamespaceFromConfig()).List(context.TODO(), metav1.ListOptions{
 			LabelSelector: labels.Set{
 				appNameLabel:  defaultVaultName,
 				instanceLabel: service.Name,
@@ -205,7 +206,7 @@ func monitorService(ctx context.Context, workerIps *sync.Map, wg *sync.WaitGroup
 			logger.Info("closing service monitor")
 			return
 		default:
-			services, err := client.CoreV1().Services(defaultVaultName).List(context.TODO(), metav1.ListOptions{
+			services, err := client.CoreV1().Services(getNamespaceFromConfig()).List(context.TODO(), metav1.ListOptions{
 				LabelSelector: labels.Set{
 					appNameLabel: defaultVaultName,
 				}.String(),
@@ -228,7 +229,7 @@ func monitorService(ctx context.Context, workerIps *sync.Map, wg *sync.WaitGroup
 					continue
 				}
 
-				pods, err := client.CoreV1().Pods(defaultVaultName).List(context.TODO(), metav1.ListOptions{
+				pods, err := client.CoreV1().Pods(getNamespaceFromConfig()).List(context.TODO(), metav1.ListOptions{
 					LabelSelector: labels.Set{
 						appNameLabel:  defaultVaultName,
 						instanceLabel: service.Name,
@@ -281,6 +282,22 @@ func monitorService(ctx context.Context, workerIps *sync.Map, wg *sync.WaitGroup
 			fmt.Println(workerIps)
 		}
 	}
+}
+
+// getNamespaceFromConfig returns the namespace from the config.
+//
+// E.g. name.service.namespace.svc.cluster.local:some-port
+func getNamespaceFromConfig() string {
+	if conf.VaultService == "" {
+		return defaultNamespace
+	}
+
+	elems := strings.Split(conf.VaultService, ".")
+	if len(elems) < 3 {
+		return defaultNamespace
+	}
+
+	return elems[2]
 }
 
 func main() {
