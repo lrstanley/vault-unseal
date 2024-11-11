@@ -146,7 +146,7 @@ func getVaultPodsForService() ([]string, error) {
 		return nil, fmt.Errorf("error getting kubernetes client: %w", err)
 	}
 
-	services, err := client.CoreV1().Services(getNamespaceFromConfig()).List(context.TODO(), metav1.ListOptions{
+	services, err := client.CoreV1().Services(getNamespaceFromConfig()).List(context.Background(), metav1.ListOptions{
 		LabelSelector: labels.Set{
 			appNameLabel: defaultVaultName,
 		}.String(),
@@ -161,7 +161,7 @@ func getVaultPodsForService() ([]string, error) {
 
 	podAddrs := make([]string, 0)
 	for _, service := range services.Items {
-		pods, err := client.CoreV1().Pods(getNamespaceFromConfig()).List(context.TODO(), metav1.ListOptions{
+		pods, err := client.CoreV1().Pods(getNamespaceFromConfig()).List(context.Background(), metav1.ListOptions{
 			LabelSelector: labels.Set{
 				appNameLabel:  defaultVaultName,
 				instanceLabel: service.Name,
@@ -206,7 +206,7 @@ func monitorService(ctx context.Context, workerIps *sync.Map, wg *sync.WaitGroup
 			logger.Info("closing service monitor")
 			return
 		default:
-			services, err := client.CoreV1().Services(getNamespaceFromConfig()).List(context.TODO(), metav1.ListOptions{
+			services, err := client.CoreV1().Services(getNamespaceFromConfig()).List(context.Background(), metav1.ListOptions{
 				LabelSelector: labels.Set{
 					appNameLabel: defaultVaultName,
 				}.String(),
@@ -229,7 +229,7 @@ func monitorService(ctx context.Context, workerIps *sync.Map, wg *sync.WaitGroup
 					continue
 				}
 
-				pods, err := client.CoreV1().Pods(getNamespaceFromConfig()).List(context.TODO(), metav1.ListOptions{
+				pods, err := client.CoreV1().Pods(getNamespaceFromConfig()).List(context.Background(), metav1.ListOptions{
 					LabelSelector: labels.Set{
 						appNameLabel:  defaultVaultName,
 						instanceLabel: service.Name,
