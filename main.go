@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -24,6 +25,11 @@ import (
 	flags "github.com/jessevdk/go-flags"
 	_ "github.com/joho/godotenv/autoload"
 	yaml "gopkg.in/yaml.v3"
+	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 var (
@@ -33,10 +39,17 @@ var (
 )
 
 const (
-	defaultCheckInterval  = 30 * time.Second
-	defaultTimeout        = 15 * time.Second
-	configRefreshInterval = 15 * time.Second
-	minimumNodes          = 3
+	defaultVaultName          = "vault"
+	defaultCheckInterval      = 30 * time.Second
+	defaultTimeout            = 15 * time.Second
+	configRefreshInterval     = 15 * time.Second
+	defaultMonitoringInterval = configRefreshInterval / 2
+	minimumNodes              = 3
+
+	appNameLabel  = "app.kubernetes.io/name"
+	instanceLabel = "app.kubernetes.io/instance"
+
+	defaultNamespace = "vault"
 )
 
 // Config is a combo of the flags passed to the cli and the configuration file (if used).
@@ -62,6 +75,7 @@ type Config struct {
 	Nodes           []string `env:"NODES"             long:"nodes" env-delim:","  description:"nodes to connect/provide tokens to (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"vault_nodes"`
 	TLSSkipVerify   bool     `env:"TLS_SKIP_VERIFY"   long:"tls-skip-verify"      description:"disables tls certificate validation: DO NOT DO THIS" yaml:"tls_skip_verify"`
 	Tokens          []string `env:"TOKENS"            long:"tokens" env-delim:"," description:"tokens to provide to nodes (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"unseal_tokens"`
+	VaultService    string   `env:"VAULT_SERVICE"     long:"vault-service" env-delim:"," description:"service to get vault pods from" yaml:"vault_service"`
 
 	NotifyMaxElapsed time.Duration `env:"NOTIFY_MAX_ELAPSED" long:"notify-max-elapsed" description:"max time before the notification can be queued before it is sent" yaml:"notify_max_elapsed"`
 	NotifyQueueDelay time.Duration `env:"NOTIFY_QUEUE_DELAY" long:"notify-queue-delay" description:"time we queue the notification to allow as many notifications to be sent in one go (e.g. if no notification within X time, send all notifications)" yaml:"notify_queue_delay"`
@@ -106,11 +120,191 @@ func newVault(addr string) (vault *vapi.Client) {
 	return vault
 }
 
+// getKubeClient returns a kubernetes clientset.
+//
+// This function will attempt to get the in-cluster config. The ServiceAccount requires the
+// following permissions:
+// - `get` on `services` in all namespaces
+// - `get` on `pods` in all namespaces
+func getKubeClient() (*kubernetes.Clientset, error) {
+	kubeconfig, err := rest.InClusterConfig()
+	if err != nil {
+		logger.WithError(err).Fatal("error getting in-cluster config")
+	}
+
+	client := new(kubernetes.Clientset)
+	if client, err = kubernetes.NewForConfig(kubeconfig); err != nil {
+		logger.WithError(err).Fatal("error creating kubernetes client")
+	}
+
+	return client, nil
+}
+
+func getVaultPodsForService() ([]string, error) {
+	client, err := getKubeClient()
+	if err != nil {
+		return nil, fmt.Errorf("error getting kubernetes client: %w", err)
+	}
+
+	services, err := client.CoreV1().Services(getNamespaceFromConfig()).List(context.Background(), metav1.ListOptions{
+		LabelSelector: labels.Set{
+			appNameLabel: defaultVaultName,
+		}.String(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error getting services: %w", err)
+	}
+
+	if len(services.Items) == 0 {
+		return nil, errors.New("no services found")
+	}
+
+	podAddrs := make([]string, 0)
+	for _, service := range services.Items {
+		pods, err := client.CoreV1().Pods(getNamespaceFromConfig()).List(context.Background(), metav1.ListOptions{
+			LabelSelector: labels.Set{
+				appNameLabel:  defaultVaultName,
+				instanceLabel: service.Name,
+			}.String(),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("error getting pods for service %q: %w", service.Name, err)
+		}
+
+		for _, pod := range pods.Items {
+			podAddrs = append(podAddrs, getVaultAddr(service.Spec.Ports, pod.Status.PodIP))
+		}
+	}
+
+	return podAddrs, nil
+}
+
+func getVaultAddr(service []core.ServicePort, ip string) string {
+	const targetScheme = "http"
+
+	for _, port := range service {
+		if port.Name == targetScheme {
+			return fmt.Sprintf("%s://%s:%d", port.Protocol, ip, port.Port)
+		}
+	}
+
+	return fmt.Sprintf("%s://%s:8200", targetScheme, ip) // Default to 8200 on http.
+}
+
+// monitorService is a function that will monitor a service for changes to the pods attached to it.
+func monitorService(ctx context.Context, workerIps *sync.Map, wg *sync.WaitGroup) {
+	client, err := getKubeClient()
+	if err != nil {
+		logger.WithError(err).Fatal("error getting kubernetes client")
+	}
+
+	ticker := time.NewTicker(defaultMonitoringInterval)
+
+	for range ticker.C {
+		select {
+		case <-ctx.Done():
+			logger.Info("closing service monitor")
+			return
+		default:
+			services, err := client.CoreV1().Services(getNamespaceFromConfig()).List(context.Background(), metav1.ListOptions{
+				LabelSelector: labels.Set{
+					appNameLabel: defaultVaultName,
+				}.String(),
+			})
+			if err != nil {
+				logger.WithError(err).Error("error getting services")
+				continue
+			}
+
+			if len(services.Items) == 0 {
+				logger.Warn("no services found")
+				continue
+			}
+
+			fmt.Println(workerIps)
+
+			svcName := strings.Split(conf.VaultService, ".")[1]
+			for _, service := range services.Items {
+				if service.Name != svcName {
+					continue
+				}
+
+				pods, err := client.CoreV1().Pods(getNamespaceFromConfig()).List(context.Background(), metav1.ListOptions{
+					LabelSelector: labels.Set{
+						appNameLabel:  defaultVaultName,
+						instanceLabel: service.Name,
+					}.String(),
+				})
+				if err != nil {
+					logger.WithError(err).Errorf("error getting pods for service %q", service.Name)
+					continue
+				}
+
+				// Check for new pods.
+				for _, pod := range pods.Items {
+					addr := getVaultAddr(service.Spec.Ports, pod.Status.PodIP)
+					if _, ok := workerIps.Load(addr); !ok {
+						logger.WithField("addr", addr).Info("adding worker")
+						wg.Add(1)
+						workerCtx, workerCancel := context.WithCancel(ctx)
+						workerIps.Store(addr, workerCancel)
+						go worker(workerCtx, wg, addr)
+					}
+				}
+
+				// Check for removed pods.
+				workerIps.Range(func(key, value interface{}) bool {
+					addr, ok := key.(string)
+					if !ok {
+						// This should never happen. Do not stop the loop.
+						return true
+					}
+
+					found := false
+					for _, pod := range pods.Items {
+						podAddr := getVaultAddr(service.Spec.Ports, pod.Status.PodIP)
+						if addr == podAddr {
+							found = true
+							break
+						}
+					}
+
+					if !found {
+						logger.WithField("addr", addr).Info("removing worker")
+						value.(context.CancelFunc)()
+						workerIps.Delete(addr)
+					}
+
+					return true
+				})
+			}
+
+			fmt.Println(workerIps)
+		}
+	}
+}
+
+// getNamespaceFromConfig returns the namespace from the config.
+//
+// E.g. name.service.namespace.svc.cluster.local:some-port
+func getNamespaceFromConfig() string {
+	if conf.VaultService == "" {
+		return defaultNamespace
+	}
+
+	elems := strings.Split(conf.VaultService, ".")
+	if len(elems) < 3 {
+		return defaultNamespace
+	}
+
+	return elems[2]
+}
+
 func main() {
 	var err error
 	if _, err = flags.Parse(conf); err != nil {
 		var ferr *flags.Error
-		if errors.As(err, &ferr) && ferr.Type == flags.ErrHelp {
+		if errors.As(err, &ferr) && errors.Is(ferr.Type, flags.ErrHelp) {
 			os.Exit(0)
 		}
 		os.Exit(1)
@@ -129,13 +323,13 @@ func main() {
 		initLogger.Level = log.MustParseLevel(conf.Log.Level)
 	}
 
-	logWriters := []io.Writer{}
+	logWriters := make([]io.Writer, 0)
 
 	if conf.Log.Path != "" {
 		var logFileWriter *os.File
 		logFileWriter, err = os.OpenFile(conf.Log.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error opening log file %q: %v", conf.Log.Path, err)
+			_, _ = fmt.Fprintf(os.Stderr, "error opening log file %q: %v", conf.Log.Path, err)
 			os.Exit(1)
 		}
 		defer logFileWriter.Close()
@@ -170,10 +364,31 @@ func main() {
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
 
+	if len(conf.Nodes) == 0 {
+		conf.Nodes = make([]string, 0)
+	}
+
+	// Get the vault pods that are attached to the given service.
+	if conf.VaultService != "" {
+		podAddrs, err := getVaultPodsForService()
+		if err != nil {
+			logger.WithError(err).Fatal("error getting vault pods")
+		} else if len(podAddrs) > 0 {
+			conf.Nodes = append(conf.Nodes, podAddrs...)
+		}
+	}
+
+	workers := new(sync.Map)
 	for _, addr := range conf.Nodes {
 		logger.WithField("addr", addr).Info("invoking worker")
 		wg.Add(1)
-		go worker(ctx, &wg, addr)
+		workerCtx, workerCancel := context.WithCancel(ctx)
+		workers.Store(addr, workerCancel)
+		go worker(workerCtx, &wg, addr)
+	}
+
+	if conf.VaultService != "" {
+		go monitorService(ctx, workers, &wg)
 	}
 
 	go notifier(ctx, &wg)
@@ -238,7 +453,7 @@ func readConfig(path string) error {
 		conf.MaxCheckInterval = conf.CheckInterval * time.Duration(2)
 	}
 
-	if len(conf.Nodes) < minimumNodes {
+	if len(conf.Nodes) < minimumNodes && conf.VaultService == "" {
 		if !conf.AllowSingleNode {
 			return fmt.Errorf("not enough nodes in node list (must have at least %d)", minimumNodes)
 		}
