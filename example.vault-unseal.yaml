@@ -17,6 +17,10 @@ vault_nodes:
   - https://1.2.3.5:8200
   - https://1.2.3.6:8200
 
+# get the vault pods attached to a service, and use those as the vault nodes.
+# this is useful if you're running vault in kubernetes.
+vault_service: name.service.namespace.svc.cluster.local:some-port
+
 # unseal tokens necessary to unseal any of the given vaults in the above node
 # list.
 #

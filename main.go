@@ -24,6 +24,11 @@ import (
 	flags "github.com/jessevdk/go-flags"
 	_ "github.com/joho/godotenv/autoload"
 	yaml "gopkg.in/yaml.v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var (
@@ -33,9 +38,9 @@ var (
 )
 
 const (
-	defaultCheckInterval  = 30 * time.Second
+	defaultCheckInterval  = 1 * time.Second
 	defaultTimeout        = 15 * time.Second
-	configRefreshInterval = 15 * time.Second
+	configRefreshInterval = 1 * time.Second
 	minimumNodes          = 3
 )
 
@@ -62,6 +67,7 @@ type Config struct {
 	Nodes           []string `env:"NODES"             long:"nodes" env-delim:","  description:"nodes to connect/provide tokens to (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"vault_nodes"`
 	TLSSkipVerify   bool     `env:"TLS_SKIP_VERIFY"   long:"tls-skip-verify"      description:"disables tls certificate validation: DO NOT DO THIS" yaml:"tls_skip_verify"`
 	Tokens          []string `env:"TOKENS"            long:"tokens" env-delim:"," description:"tokens to provide to nodes (can be provided multiple times & uses comma-separated string for environment variable)" yaml:"unseal_tokens"`
+	VaultService    string   `env:"VAULT_SERVICE"     long:"vault-service" env-delim:"," description:"service to get vault pods from" yaml:"vault_service"`
 
 	NotifyMaxElapsed time.Duration `env:"NOTIFY_MAX_ELAPSED" long:"notify-max-elapsed" description:"max time before the notification can be queued before it is sent" yaml:"notify_max_elapsed"`
 	NotifyQueueDelay time.Duration `env:"NOTIFY_QUEUE_DELAY" long:"notify-queue-delay" description:"time we queue the notification to allow as many notifications to be sent in one go (e.g. if no notification within X time, send all notifications)" yaml:"notify_queue_delay"`
@@ -104,6 +110,53 @@ func newVault(addr string) (vault *vapi.Client) {
 	}
 
 	return vault
+}
+
+func getVaultPodsForService() ([]string, error) {
+	var (
+		kubeconfig string
+		err        error
+	)
+	if kubeconfig = os.Getenv("KUBECONFIG"); kubeconfig == "" {
+		kubeconfig = os.ExpandEnv("$HOME/source/personal/b3-prod-1-config.yaml")
+	}
+
+	config := new(rest.Config)
+	if config, err = clientcmd.BuildConfigFromFlags("", kubeconfig); err != nil {
+		return nil, fmt.Errorf("error building kubernetes config: %w", err)
+	}
+
+	client := new(kubernetes.Clientset)
+	if client, err = kubernetes.NewForConfig(config); err != nil {
+		return nil, fmt.Errorf("error creating kubernetes client: %w", err)
+	}
+
+	services, err := client.CoreV1().Services("vault").List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labels.Set{"app.kubernetes.io/name": "vault"}.String(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error getting services: %w", err)
+	}
+
+	if len(services.Items) == 0 {
+		return nil, errors.New("no services found")
+	}
+
+	podAddrs := make([]string, 0)
+	for _, service := range services.Items {
+		pods, err := client.CoreV1().Pods("vault").List(context.TODO(), metav1.ListOptions{
+			LabelSelector: labels.Set{"app.kubernetes.io/name": "vault", "app.kubernetes.io/instance": service.Name}.String(),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("error getting pods for service %q: %w", service.Name, err)
+		}
+
+		for _, pod := range pods.Items {
+			podAddrs = append(podAddrs, fmt.Sprintf("https://%s:%d", pod.Status.PodIP, 8200))
+		}
+	}
+
+	return podAddrs, nil
 }
 
 func main() {
@@ -169,6 +222,18 @@ func main() {
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
+
+	if len(conf.Nodes) == 0 {
+		conf.Nodes = make([]string, 0)
+	}
+
+	// Get the vault pods that are attached to the given service.
+	podAddrs, err := getVaultPodsForService()
+	if err != nil {
+		logger.WithError(err).Fatal("error getting vault pods")
+	} else if len(podAddrs) > 0 {
+		conf.Nodes = append(conf.Nodes, podAddrs...)
+	}
 
 	for _, addr := range conf.Nodes {
 		logger.WithField("addr", addr).Info("invoking worker")
@@ -238,7 +303,7 @@ func readConfig(path string) error {
 		conf.MaxCheckInterval = conf.CheckInterval * time.Duration(2)
 	}
 
-	if len(conf.Nodes) < minimumNodes {
+	if len(conf.Nodes) < minimumNodes && conf.VaultService != "" {
 		if !conf.AllowSingleNode {
 			return fmt.Errorf("not enough nodes in node list (must have at least %d)", minimumNodes)
 		}
