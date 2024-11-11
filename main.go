@@ -40,9 +40,9 @@ var (
 
 const (
 	defaultVaultName      = "vault"
-	defaultCheckInterval  = 1 * time.Second
+	defaultCheckInterval  = 30 * time.Second
 	defaultTimeout        = 15 * time.Second
-	configRefreshInterval = 1 * time.Second
+	configRefreshInterval = 15 * time.Second
 	minimumNodes          = 3
 )
 
