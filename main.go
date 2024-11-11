@@ -39,11 +39,12 @@ var (
 )
 
 const (
-	defaultVaultName      = "vault"
-	defaultCheckInterval  = 30 * time.Second
-	defaultTimeout        = 15 * time.Second
-	configRefreshInterval = 15 * time.Second
-	minimumNodes          = 3
+	defaultVaultName          = "vault"
+	defaultCheckInterval      = 30 * time.Second
+	defaultTimeout            = 15 * time.Second
+	configRefreshInterval     = 15 * time.Second
+	defaultMonitoringInterval = configRefreshInterval / 2
+	minimumNodes              = 3
 
 	appNameLabel  = "app.kubernetes.io/name"
 	instanceLabel = "app.kubernetes.io/instance"
@@ -196,12 +197,14 @@ func monitorService(ctx context.Context, workerIps *sync.Map, wg *sync.WaitGroup
 		logger.WithError(err).Fatal("error getting kubernetes client")
 	}
 
-	for {
+	ticker := time.NewTicker(defaultMonitoringInterval)
+
+	for range ticker.C {
 		select {
 		case <-ctx.Done():
 			logger.Info("closing service monitor")
 			return
-		case <-time.After(5 * time.Second):
+		default:
 			services, err := client.CoreV1().Services(defaultVaultName).List(context.TODO(), metav1.ListOptions{
 				LabelSelector: labels.Set{
 					appNameLabel: defaultVaultName,
