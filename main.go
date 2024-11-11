@@ -114,6 +114,12 @@ func newVault(addr string) (vault *vapi.Client) {
 	return vault
 }
 
+// getKubeClient returns a kubernetes clientset.
+//
+// This function will attempt to get the in-cluster config. The ServiceAccount requires the
+// following permissions:
+// - `get` on `services` in the `default` namespace
+// - `get` on `pods` in the `default` namespace
 func getKubeClient() (*kubernetes.Clientset, error) {
 	kubeconfig, err := rest.InClusterConfig()
 	if err != nil {
