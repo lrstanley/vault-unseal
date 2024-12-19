@@ -27,6 +27,7 @@
   </a>
 
 
+
   <a href="https://codecov.io/gh/lrstanley/vault-unseal">
     <img title="Code Coverage" src="https://img.shields.io/codecov/c/github/lrstanley/vault-unseal/master?style=flat-square">
   </a>
