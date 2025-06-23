@@ -176,6 +176,7 @@ func main() {
 		go worker(ctx, &wg, addr)
 	}
 
+	wg.Add(1)
 	go notifier(ctx, &wg)
 
 	if conf.ConfigPath != "" {
