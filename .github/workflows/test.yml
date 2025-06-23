@@ -12,6 +12,7 @@ on:
 jobs:
   go-test:
     uses: lrstanley/.github/.github/workflows/lang-go-test-matrix.yml@master
+    secrets: inherit
     with:
       go-version: latest
   go-lint:
@@ -20,6 +21,7 @@ jobs:
   go-build:
     needs: [go-test, go-lint]
     uses: lrstanley/.github/.github/workflows/lang-go-release.yml@master
+    secrets: inherit
     with:
       has-ghcr: true
       upload-artifacts: true

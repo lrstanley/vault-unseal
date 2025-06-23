@@ -12,6 +12,7 @@ jobs:
       scan: false
   go-release:
     uses: lrstanley/.github/.github/workflows/lang-go-release.yml@master
+    secrets: inherit
     with:
       has-ghcr: true
       upload-artifacts: true
