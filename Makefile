@@ -11,6 +11,7 @@ go-fetch:
 
 up:
 	go get -u ./...
+	go get -u -t ./...
 	go mod tidy
 
 clean:

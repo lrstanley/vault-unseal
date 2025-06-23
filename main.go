@@ -133,7 +133,7 @@ func main() {
 
 	if conf.Log.Path != "" {
 		var logFileWriter *os.File
-		logFileWriter, err = os.OpenFile(conf.Log.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
+		logFileWriter, err = os.OpenFile(conf.Log.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error opening log file %q: %v", conf.Log.Path, err)
 			os.Exit(1)
@@ -214,7 +214,7 @@ func readConfig(path string) error {
 		}
 
 		// Check to see if it's updated.
-		if fi.ModTime() == conf.lastModifiedCheck {
+		if fi.ModTime().Equal(conf.lastModifiedCheck) {
 			return nil
 		}
 

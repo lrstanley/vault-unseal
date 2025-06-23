@@ -18,7 +18,7 @@ RUN \
 	make
 
 # runtime image
-FROM alpine:3.21
+FROM alpine:3.22
 RUN apk add --no-cache ca-certificates
 COPY --from=build /build/vault-unseal /usr/local/bin/vault-unseal
 

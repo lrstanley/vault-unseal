@@ -78,7 +78,7 @@ func sendQueue() {
 	text := `vault-unseal ran into errors when attempting to check seal status/unseal. here are the errors:
 `
 
-	for i := range len(notifyQueue) {
+	for i := range notifyQueue {
 		text += fmt.Sprintf("\n%s :: %v", notifyQueue[i].timestamp.Format(time.RFC822), notifyQueue[i].err)
 	}
 
