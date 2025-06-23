@@ -8,5 +8,4 @@ on:
 jobs:
   docker-prune:
     uses: lrstanley/.github/.github/workflows/docker-prune.yml@master
-    secrets:
-      token: ${{ secrets.USER_PAT }}
+    secrets: inherit
