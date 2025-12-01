@@ -156,8 +156,6 @@ $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.7.2
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:latest
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.7.1
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.7.0
-$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.6.0
-$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.5.1
 ```
 <!-- template:end:ghcr -->
 
