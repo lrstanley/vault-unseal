@@ -129,11 +129,11 @@ func sendQueue() {
 
 		err = mail.Send(s, msg)
 		if err != nil {
-			logger.WithError(err).Error("unable to send notification")
+			logger.WithError(err).Error("unable to send email notification")
 			return
 		}
 
-		logger.WithField("to", strings.Join(conf.Email.SendAddrs, ",")).Info("successfully sent notifications")
+		logger.WithField("to", strings.Join(conf.Email.SendAddrs, ",")).Info("successfully sent email notifications")
 	}
 
 	if conf.Mattermost.Enabled {
@@ -151,7 +151,7 @@ func sendQueue() {
 
 		jsonData, err := json.Marshal(data)
 		if err != nil {
-			fmt.Println("Error encoding JSON:", err)
+			logger.Errorf("error encoding mattermost webhook payload json:", err)
 			return
 		}
 
@@ -161,7 +161,7 @@ func sendQueue() {
 
 		req, err := http.NewRequest("POST", conf.Mattermost.Webhook, bytes.NewBuffer(jsonData))
 		if err != nil {
-			logger.Infof("Error creating request:", err)
+			logger.Errorf("error creating mattermost webhook post request:", err)
 			return
 		}
 
@@ -169,10 +169,15 @@ func sendQueue() {
 
 		resp, err := client.Do(req)
 		if err != nil {
-			logger.Infof("Error sending request:", err)
+			logger.Errorf("error sending mattermost webhook post request:", err)
 			return
 		}
 		defer resp.Body.Close()
+
+		if resp.StatusCode == 200 {
+			logger.Info("successfully sent mattermost notifications")
+		}
+
 	}
 
 	notifyQueue = nil
