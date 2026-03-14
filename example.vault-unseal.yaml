@@ -60,6 +60,11 @@ email:
   # The default is opportunistic.
   mandatory_tls: false
 
+# mattermost webhook notification
+mattermost:
+  enabled: false
+  webhook: https://your-mattermost-server.com/hooks/xxx-generatedkey-xxx
+
 # notifications in vault-unseal queue up to prevent email spam (e.g. 20 alerts
 # in one email). this is the max allotted time an event can be queued before
 # the queue is sent as a notification.

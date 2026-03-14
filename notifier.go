@@ -5,9 +5,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -27,15 +30,17 @@ type notifyError struct {
 	err       error
 }
 
+type MattermostPayload struct {
+	Text string `json:"text"`
+}
+
 func notify(err error) {
 	err = fmt.Errorf("error: %w", err)
 	logger.WithError(err).Error("notify-error")
 
-	if !conf.Email.Enabled {
-		return
+	if conf.Email.Enabled || conf.Mattermost.Enabled {
+		notifyCh <- err
 	}
-
-	notifyCh <- err
 }
 
 func notifier(ctx context.Context, wg *sync.WaitGroup) {
@@ -82,50 +87,93 @@ func sendQueue() {
 		text += fmt.Sprintf("\n%s :: %v", notifyQueue[i].timestamp.Format(time.RFC822), notifyQueue[i].err)
 	}
 
-	var err error
+	if conf.Email.Enabled {
 
-	smtp := mail.NewDialer(conf.Email.Hostname, conf.Email.Port, conf.Email.Username, conf.Email.Password)
-	smtp.TLSConfig = &tls.Config{
-		InsecureSkipVerify: conf.Email.TLSSkipVerify, //nolint:gosec
-		ServerName:         conf.Email.Hostname,
+		var err error
+
+		smtp := mail.NewDialer(conf.Email.Hostname, conf.Email.Port, conf.Email.Username, conf.Email.Password)
+		smtp.TLSConfig = &tls.Config{
+			InsecureSkipVerify: conf.Email.TLSSkipVerify, //nolint:gosec
+			ServerName:         conf.Email.Hostname,
+		}
+
+		if conf.Email.MandatoryTLS {
+			smtp.StartTLSPolicy = mail.MandatoryStartTLS
+		}
+
+		smtp.LocalName, err = os.Hostname()
+		if err != nil {
+			smtp.LocalName = "localhost"
+		}
+
+		s, err := smtp.Dial()
+		if err != nil {
+			logger.WithError(err).WithFields(log.Fields{
+				"hostname": conf.Email.Hostname,
+				"port":     conf.Email.Port,
+			}).Error("unable to make smtp connection")
+			return
+		}
+
+		text += fmt.Sprintf("\n\nsent from vault-unseal. version: %s, compile date: %s, hostname: %s", version, date, smtp.LocalName)
+
+		msg := mail.NewMessage()
+		msg.SetHeader("From", conf.Email.FromAddr)
+		msg.SetHeader("Subject", fmt.Sprintf("vault-unseal: %s: %d errors occurred", conf.Environment, len(notifyQueue)))
+		msg.SetBody("text/plain", text)
+
+		msg.SetHeader("To", conf.Email.SendAddrs[0])
+		if len(conf.Email.SendAddrs) > 1 {
+			msg.SetHeader("CC", conf.Email.SendAddrs[1:]...)
+		}
+
+		err = mail.Send(s, msg)
+		if err != nil {
+			logger.WithError(err).Error("unable to send notification")
+			return
+		}
+
+		logger.WithField("to", strings.Join(conf.Email.SendAddrs, ",")).Info("successfully sent notifications")
 	}
 
-	if conf.Email.MandatoryTLS {
-		smtp.StartTLSPolicy = mail.MandatoryStartTLS
+	if conf.Mattermost.Enabled {
+
+		hostname, err := os.Hostname()
+		if err != nil {
+			hostname = "localhost"
+		}
+
+		text += fmt.Sprintf("\n\nsent from vault-unseal. version: %s, compile date: %s, hostname: %s", version, date, hostname)
+
+		data := MattermostPayload{
+			Text: text,
+		}
+
+		jsonData, err := json.Marshal(data)
+		if err != nil {
+			fmt.Println("Error encoding JSON:", err)
+			return
+		}
+
+		client := &http.Client{
+			Timeout: 10 * time.Second,
+		}
+
+		req, err := http.NewRequest("POST", conf.Mattermost.Webhook, bytes.NewBuffer(jsonData))
+		if err != nil {
+			logger.Infof("Error creating request:", err)
+			return
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			logger.Infof("Error sending request:", err)
+			return
+		}
+		defer resp.Body.Close()
 	}
 
-	smtp.LocalName, err = os.Hostname()
-	if err != nil {
-		smtp.LocalName = "localhost"
-	}
-
-	s, err := smtp.Dial()
-	if err != nil {
-		logger.WithError(err).WithFields(log.Fields{
-			"hostname": conf.Email.Hostname,
-			"port":     conf.Email.Port,
-		}).Error("unable to make smtp connection")
-		return
-	}
-
-	text += fmt.Sprintf("\n\nsent from vault-unseal. version: %s, compile date: %s, hostname: %s", version, date, smtp.LocalName)
-
-	msg := mail.NewMessage()
-	msg.SetHeader("From", conf.Email.FromAddr)
-	msg.SetHeader("Subject", fmt.Sprintf("vault-unseal: %s: %d errors occurred", conf.Environment, len(notifyQueue)))
-	msg.SetBody("text/plain", text)
-
-	msg.SetHeader("To", conf.Email.SendAddrs[0])
-	if len(conf.Email.SendAddrs) > 1 {
-		msg.SetHeader("CC", conf.Email.SendAddrs[1:]...)
-	}
-
-	err = mail.Send(s, msg)
-	if err != nil {
-		logger.WithError(err).Error("unable to send notification")
-		return
-	}
-
-	logger.WithField("to", strings.Join(conf.Email.SendAddrs, ",")).Info("successfully sent notifications")
 	notifyQueue = nil
 }

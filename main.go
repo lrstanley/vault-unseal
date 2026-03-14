@@ -78,6 +78,11 @@ type Config struct {
 		MandatoryTLS  bool     `env:"EMAIL_MANDATORY_TLS"   long:"mandatory-tls"   description:"require TLS for SMTP connections. Defaults to opportunistic." yaml:"mandatory_tls"`
 	} `group:"Email Options" namespace:"email" yaml:"email"`
 
+	Mattermost struct {
+		Enabled       bool     `env:"MATTERMOST_ENABLED"         long:"enabled"         description:"enables mattermost webhook support" yaml:"enabled"`
+		Webhook 	  string   `env:"MATTERMOST_WEBHOOK"        long:"webhook"        description:"webhook" yaml:"webhook"`
+	} `group:"Mattermost webhook options" namespace:"mattermost" yaml:"mattermost"`
+
 	lastModifiedCheck time.Time
 }
 
