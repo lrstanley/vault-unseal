@@ -88,97 +88,103 @@ func sendQueue() {
 	}
 
 	if conf.Email.Enabled {
-
-		var err error
-
-		smtp := mail.NewDialer(conf.Email.Hostname, conf.Email.Port, conf.Email.Username, conf.Email.Password)
-		smtp.TLSConfig = &tls.Config{
-			InsecureSkipVerify: conf.Email.TLSSkipVerify, //nolint:gosec
-			ServerName:         conf.Email.Hostname,
-		}
-
-		if conf.Email.MandatoryTLS {
-			smtp.StartTLSPolicy = mail.MandatoryStartTLS
-		}
-
-		smtp.LocalName, err = os.Hostname()
-		if err != nil {
-			smtp.LocalName = "localhost"
-		}
-
-		s, err := smtp.Dial()
-		if err != nil {
-			logger.WithError(err).WithFields(log.Fields{
-				"hostname": conf.Email.Hostname,
-				"port":     conf.Email.Port,
-			}).Error("unable to make smtp connection")
-			return
-		}
-
-		text += fmt.Sprintf("\n\nsent from vault-unseal. version: %s, compile date: %s, hostname: %s", version, date, smtp.LocalName)
-
-		msg := mail.NewMessage()
-		msg.SetHeader("From", conf.Email.FromAddr)
-		msg.SetHeader("Subject", fmt.Sprintf("vault-unseal: %s: %d errors occurred", conf.Environment, len(notifyQueue)))
-		msg.SetBody("text/plain", text)
-
-		msg.SetHeader("To", conf.Email.SendAddrs[0])
-		if len(conf.Email.SendAddrs) > 1 {
-			msg.SetHeader("CC", conf.Email.SendAddrs[1:]...)
-		}
-
-		err = mail.Send(s, msg)
-		if err != nil {
-			logger.WithError(err).Error("unable to send email notification")
-			return
-		}
-
-		logger.WithField("to", strings.Join(conf.Email.SendAddrs, ",")).Info("successfully sent email notifications")
+		emailNotifier(text)
 	}
 
 	if conf.Mattermost.Enabled {
-
-		hostname, err := os.Hostname()
-		if err != nil {
-			hostname = "localhost"
-		}
-
-		text += fmt.Sprintf("\n\nsent from vault-unseal. version: %s, compile date: %s, hostname: %s", version, date, hostname)
-
-		data := MattermostPayload{
-			Text: text,
-		}
-
-		jsonData, err := json.Marshal(data)
-		if err != nil {
-			logger.Errorf("error encoding mattermost webhook payload json:", err)
-			return
-		}
-
-		client := &http.Client{
-			Timeout: 10 * time.Second,
-		}
-
-		req, err := http.NewRequest("POST", conf.Mattermost.Webhook, bytes.NewBuffer(jsonData))
-		if err != nil {
-			logger.Errorf("error creating mattermost webhook post request:", err)
-			return
-		}
-
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			logger.Errorf("error sending mattermost webhook post request:", err)
-			return
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == 200 {
-			logger.Info("successfully sent mattermost notifications")
-		}
-
+		mattermostNotifier(text)
 	}
 
 	notifyQueue = nil
+}
+
+func emailNotifier(text string) {
+	var err error
+
+	smtp := mail.NewDialer(conf.Email.Hostname, conf.Email.Port, conf.Email.Username, conf.Email.Password)
+	smtp.TLSConfig = &tls.Config{
+		InsecureSkipVerify: conf.Email.TLSSkipVerify, //nolint:gosec
+		ServerName:         conf.Email.Hostname,
+	}
+
+	if conf.Email.MandatoryTLS {
+		smtp.StartTLSPolicy = mail.MandatoryStartTLS
+	}
+
+	smtp.LocalName, err = os.Hostname()
+	if err != nil {
+		smtp.LocalName = "localhost"
+	}
+
+	s, err := smtp.Dial()
+	if err != nil {
+		logger.WithError(err).WithFields(log.Fields{
+			"hostname": conf.Email.Hostname,
+			"port":     conf.Email.Port,
+		}).Error("unable to make smtp connection")
+		return
+	}
+
+	text += fmt.Sprintf("\n\nsent from vault-unseal. version: %s, compile date: %s, hostname: %s", version, date, smtp.LocalName)
+
+	msg := mail.NewMessage()
+	msg.SetHeader("From", conf.Email.FromAddr)
+	msg.SetHeader("Subject", fmt.Sprintf("vault-unseal: %s: %d errors occurred", conf.Environment, len(notifyQueue)))
+	msg.SetBody("text/plain", text)
+
+	msg.SetHeader("To", conf.Email.SendAddrs[0])
+	if len(conf.Email.SendAddrs) > 1 {
+		msg.SetHeader("CC", conf.Email.SendAddrs[1:]...)
+	}
+
+	err = mail.Send(s, msg)
+	if err != nil {
+		logger.WithError(err).Error("unable to send email notification")
+		return
+	}
+
+	logger.WithField("to", strings.Join(conf.Email.SendAddrs, ",")).Info("successfully sent email notifications")
+}
+
+func mattermostNotifier(text string) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "localhost"
+	}
+
+	text += fmt.Sprintf("\n\nsent from vault-unseal. version: %s, compile date: %s, hostname: %s", version, date, hostname)
+
+	data := MattermostPayload{
+		Text: text,
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		logger.Errorf("error encoding mattermost webhook payload json:", err)
+		return
+	}
+
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	req, err := http.NewRequest("POST", conf.Mattermost.Webhook, bytes.NewBuffer(jsonData))
+	if err != nil {
+		logger.Errorf("error creating mattermost webhook post request:", err)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Errorf("error sending mattermost webhook post request:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 200 {
+		logger.Info("successfully sent mattermost notifications")
+	}
+
 }
