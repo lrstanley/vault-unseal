@@ -155,7 +155,6 @@ page for prebuilt versions.
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:master
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.7.2
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:latest
-$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.7.1
 ```
 <!-- template:end:ghcr -->
 
