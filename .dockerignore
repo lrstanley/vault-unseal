@@ -1,0 +1,6 @@
+**/*.yaml
+**/*.yml
+**/*.md
+.github
+scripts
+vault-unseal

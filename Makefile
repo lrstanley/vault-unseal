@@ -17,6 +17,9 @@ up:
 clean:
 	/bin/rm -rfv "dist/" "${PROJECT}"
 
+docker:
+	docker build -t ${PROJECT} -f Dockerfile .
+
 go-dlv: go-prepare
 	dlv debug \
 		--headless --listen=:2345 \
@@ -29,6 +32,7 @@ go-debug: clean
 
 go-prepare: go-fetch clean
 	go generate -x ./...
+	go run *.go generate-markdown > USAGE.md
 
 build: go-prepare go-fetch
 	CGO_ENABLED=0 \

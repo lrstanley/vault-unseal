@@ -1,20 +1,18 @@
 module github.com/lrstanley/vault-unseal
 
-go 1.25.0
+go 1.26.0
 
 require (
-	github.com/apex/log v1.9.0
+	github.com/goccy/go-yaml v1.19.2
 	github.com/hashicorp/vault/api v1.23.0
-	github.com/jessevdk/go-flags v1.6.1
-	github.com/joho/godotenv v1.5.1
+	github.com/lrstanley/clix/v2 v2.0.0-beta.1
 	gopkg.in/mail.v2 v2.3.1
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
+	github.com/alecthomas/kong v1.12.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
-	github.com/go-logfmt/logfmt v0.6.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
@@ -24,16 +22,12 @@ require (
 	github.com/hashicorp/go-secure-stdlib/strutil v0.1.2 // indirect
 	github.com/hashicorp/go-sockaddr v1.0.7 // indirect
 	github.com/hashicorp/hcl v1.0.1-vault-7 // indirect
-	github.com/kr/text v0.2.0 // indirect
+	github.com/lmittmann/tint v1.1.2 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
-	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 )

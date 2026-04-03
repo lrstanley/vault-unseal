@@ -171,7 +171,8 @@ Note that you must have [Go](https://golang.org/doc/install) installed (latest i
 The default configuration path is `/etc/vault-unseal.yaml` when using `deb`/`rpm`.
 If you are not using these package formats, copy the example config file,
 `example.vault-unseal.yaml`, to `vault-unseal.yaml`. Note, all fields can be provided
-via environment variables (vault-unseal also supports `.env` files).
+via environment variables (vault-unseal also supports `.env` files). Note that
+currently, the configuration file always takes precedence over environment variables.
 
 ```
 $ ./vault-unseal --help

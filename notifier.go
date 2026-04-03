@@ -8,12 +8,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/apex/log"
 	mail "gopkg.in/mail.v2"
 )
 
@@ -27,21 +26,20 @@ type notifyError struct {
 	err       error
 }
 
-func notify(err error) {
+func notify(ctx context.Context, logger *slog.Logger, err error) {
 	err = fmt.Errorf("error: %w", err)
-	logger.WithError(err).Error("notify-error")
+	logger.ErrorContext(ctx, "notification", "err", err)
 
-	if !conf.Email.Enabled {
+	if !conf.Load().Email.Enabled {
 		return
 	}
 
 	notifyCh <- err
 }
 
-func notifier(ctx context.Context, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	logger.Info("starting notifier")
+func notifier(ctx context.Context, logger *slog.Logger) {
+	nlog := logger.With("component", "notifier")
+	nlog.InfoContext(ctx, "starting notifier")
 
 	// Wait for events, and sort of act like a debouncer. As a new event comes in,
 	// it prevents the time.After statement from returning, thus resetting it's
@@ -54,43 +52,51 @@ func notifier(ctx context.Context, wg *sync.WaitGroup) {
 	for {
 		select {
 		case <-ctx.Done():
-			sendQueue()
+			sendQueue(ctx, nlog)
 			return
-		case err := <-notifyCh:
-			notifyQueue = append(notifyQueue, notifyError{timestamp: time.Now(), err: err})
+		case nerr := <-notifyCh:
+			notifyQueue = append(notifyQueue, notifyError{timestamp: time.Now(), err: nerr})
 
-			if time.Since(notifyQueue[0].timestamp) >= conf.NotifyMaxElapsed {
-				sendQueue()
+			if time.Since(notifyQueue[0].timestamp) >= conf.Load().NotifyMaxElapsed {
+				sendQueue(ctx, nlog)
 			}
-		case <-time.After(conf.NotifyQueueDelay):
-			sendQueue()
+		case <-time.After(conf.Load().NotifyQueueDelay):
+			sendQueue(ctx, nlog)
 		}
 	}
 }
 
-func sendQueue() {
+func sendQueue(ctx context.Context, logger *slog.Logger) {
 	if len(notifyQueue) == 0 {
 		return
 	}
 
-	logger.Infof("attempting to send notifications for %d alerts", len(notifyQueue))
+	logger.InfoContext(
+		ctx, "attempting to send notifications for alerts",
+		"count", len(notifyQueue),
+	)
 
-	text := `vault-unseal ran into errors when attempting to check seal status/unseal. here are the errors:
-`
-
+	var text strings.Builder
+	text.WriteString(`vault-unseal ran into errors when attempting to check seal status/unseal. here are the errors:
+`)
 	for i := range notifyQueue {
-		text += fmt.Sprintf("\n%s :: %v", notifyQueue[i].timestamp.Format(time.RFC822), notifyQueue[i].err)
+		fmt.Fprintf(&text, "\n%s :: %v", notifyQueue[i].timestamp.Format(time.RFC822), notifyQueue[i].err)
 	}
 
 	var err error
 
-	smtp := mail.NewDialer(conf.Email.Hostname, conf.Email.Port, conf.Email.Username, conf.Email.Password)
+	smtp := mail.NewDialer(
+		conf.Load().Email.Hostname,
+		conf.Load().Email.Port,
+		conf.Load().Email.Username,
+		conf.Load().Email.Password,
+	)
 	smtp.TLSConfig = &tls.Config{
-		InsecureSkipVerify: conf.Email.TLSSkipVerify, //nolint:gosec
-		ServerName:         conf.Email.Hostname,
+		InsecureSkipVerify: conf.Load().Email.TLSSkipVerify, //nolint:gosec
+		ServerName:         conf.Load().Email.Hostname,
 	}
 
-	if conf.Email.MandatoryTLS {
+	if conf.Load().Email.MandatoryTLS {
 		smtp.StartTLSPolicy = mail.MandatoryStartTLS
 	}
 
@@ -101,31 +107,46 @@ func sendQueue() {
 
 	s, err := smtp.Dial()
 	if err != nil {
-		logger.WithError(err).WithFields(log.Fields{
-			"hostname": conf.Email.Hostname,
-			"port":     conf.Email.Port,
-		}).Error("unable to make smtp connection")
+		logger.ErrorContext(
+			ctx, "unable to make smtp connection",
+			"error", err,
+			"hostname", conf.Load().Email.Hostname,
+			"port", conf.Load().Email.Port,
+		)
 		return
 	}
 
-	text += fmt.Sprintf("\n\nsent from vault-unseal. version: %s, compile date: %s, hostname: %s", version, date, smtp.LocalName)
+	fmt.Fprintf(
+		&text, "\n\nsent from vault-unseal. version: %s, compile date: %s, hostname: %s",
+		version, date, smtp.LocalName,
+	)
 
 	msg := mail.NewMessage()
-	msg.SetHeader("From", conf.Email.FromAddr)
-	msg.SetHeader("Subject", fmt.Sprintf("vault-unseal: %s: %d errors occurred", conf.Environment, len(notifyQueue)))
-	msg.SetBody("text/plain", text)
+	msg.SetHeader("From", conf.Load().Email.FromAddr)
+	msg.SetHeader(
+		"Subject",
+		fmt.Sprintf(
+			"vault-unseal: %s: %d errors occurred",
+			conf.Load().Environment,
+			len(notifyQueue),
+		),
+	)
+	msg.SetBody("text/plain", text.String())
 
-	msg.SetHeader("To", conf.Email.SendAddrs[0])
-	if len(conf.Email.SendAddrs) > 1 {
-		msg.SetHeader("CC", conf.Email.SendAddrs[1:]...)
+	msg.SetHeader("To", conf.Load().Email.SendAddrs[0])
+	if len(conf.Load().Email.SendAddrs) > 1 {
+		msg.SetHeader("CC", conf.Load().Email.SendAddrs[1:]...)
 	}
 
 	err = mail.Send(s, msg)
 	if err != nil {
-		logger.WithError(err).Error("unable to send notification")
+		logger.ErrorContext(ctx, "unable to send notification", "error", err)
 		return
 	}
 
-	logger.WithField("to", strings.Join(conf.Email.SendAddrs, ",")).Info("successfully sent notifications")
+	logger.InfoContext(
+		ctx, "successfully sent notifications",
+		"to", strings.Join(conf.Load().Email.SendAddrs, ","),
+	)
 	notifyQueue = nil
 }

@@ -6,63 +6,62 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"net"
-	"sync"
 	"time"
 
-	"github.com/apex/log"
 	"github.com/hashicorp/vault/api"
 )
 
-func worker(ctx context.Context, wg *sync.WaitGroup, addr string) {
-	defer wg.Done()
-
-	client := newVault(addr)
-
+func worker(ctx context.Context, logger *slog.Logger, client *api.Client, addr string) {
 	var errCount int
 	var errDelay time.Duration
 
+	wlog := logger.With(
+		"component", "worker",
+		"addr", addr,
+	)
+
 	for {
-		errDelay = (30 * time.Second) * time.Duration(errCount)
-		if errDelay > conf.MaxCheckInterval {
-			errDelay = conf.MaxCheckInterval
-		}
+		errDelay = min((30*time.Second)*time.Duration(errCount), conf.Load().MaxCheckInterval)
 
 		if errCount > 0 {
-			logger.WithFields(log.Fields{
-				"delay": errDelay,
-				"addr":  addr,
-			}).Info("delaying checks due to errors")
+			wlog.InfoContext(ctx, "delaying checks due to errors", "delay", errDelay)
 		}
 
 		select {
 		case <-ctx.Done():
-			logger.WithField("addr", addr).Info("closing worker")
+			wlog.InfoContext(ctx, "closing worker")
 			return
-		case <-time.After(conf.CheckInterval + errDelay):
-			logger.WithField("addr", addr).Info("running checks")
+		case <-time.After(conf.Load().CheckInterval + errDelay):
+			wlog.InfoContext(ctx, "running checks")
 
 			status, err := client.Sys().SealStatus()
 			if err != nil {
 				errCount++
 				nerr := fmt.Errorf("checking seal status: %w", err)
 
-				if err, ok := err.(net.Error); ok && err.Timeout() { //nolint:errorlint
+				if nerr, ok := errors.AsType[net.Error](err); ok && nerr.Timeout() {
 					// It's a network timeout. If it's the first network timeout,
 					// don't notify, just try again. This should help with network
 					// blips.
 
 					if errCount == 1 {
-						logger.WithField("addr", addr).WithError(err).Error("checking seal status")
+						wlog.ErrorContext(
+							ctx, "checking seal status",
+							"error", err,
+							"timeout", true,
+						)
 						continue
 					}
 				}
 
-				notify(nerr)
+				notify(ctx, wlog, nerr)
 				continue
 			}
-			logger.WithFields(log.Fields{"addr": addr, "status": status}).Info("seal status")
+			wlog.InfoContext(ctx, "seal status", "status", status)
 			if !status.Sealed {
 				// Not sealed, don't do anything.
 				errCount = 0
@@ -75,25 +74,25 @@ func worker(ctx context.Context, wg *sync.WaitGroup, addr string) {
 			// online, the unseal can occur using two keys from one instance, and
 			// one key from another.
 
-			for i, token := range conf.Tokens {
-				logger.WithFields(log.Fields{
-					"addr":     addr,
-					"token":    i + 1,
-					"progress": status.Progress,
-					"total":    status.T,
-				}).Info("using unseal token")
+			for i, token := range conf.Load().Tokens {
+				wlog.InfoContext(
+					ctx, "using unseal token",
+					"token", i+1,
+					"progress", status.Progress,
+					"total", status.T,
+				)
 
 				var resp *api.SealStatusResponse
 				resp, err = client.Sys().Unseal(token)
 				if err != nil {
-					notify(fmt.Errorf("using unseal key %d on %v: %w", i+1, addr, err))
+					notify(ctx, wlog, fmt.Errorf("using unseal key %d on %v: %w", i+1, addr, err))
 					errCount++
 					continue
 				}
 
-				logger.WithField("addr", addr).Info("token successfully sent")
+				wlog.InfoContext(ctx, "token successfully sent")
 				if !resp.Sealed {
-					notify(fmt.Errorf("(was sealed) %v now unsealed with tokens", addr))
+					notify(ctx, wlog, fmt.Errorf("(was sealed) %v now unsealed with tokens", addr))
 					continue
 				}
 			}

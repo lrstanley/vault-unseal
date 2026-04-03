@@ -1,7 +1,7 @@
-# syntax = docker/dockerfile:1.4
+# syntax = docker/dockerfile:1
 
 # build image
-FROM golang:alpine as build
+FROM golang:alpine AS build
 WORKDIR /build
 
 RUN apk add --no-cache make
@@ -20,9 +20,11 @@ RUN \
 # runtime image
 FROM alpine:3.23
 RUN apk add --no-cache ca-certificates
+RUN adduser -H -D app
 COPY --from=build /build/vault-unseal /usr/local/bin/vault-unseal
 
 # runtime params
+USER app
 WORKDIR /
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENV LOG_JSON=true
