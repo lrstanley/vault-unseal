@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/vault/api"
 )
 
-func worker(ctx context.Context, logger *slog.Logger, client *api.Client, addr string) {
+func worker(ctx context.Context, logger *slog.Logger, cancel context.CancelFunc, addr string) {
 	var errCount int
 	var errDelay time.Duration
 
@@ -25,6 +25,13 @@ func worker(ctx context.Context, logger *slog.Logger, client *api.Client, addr s
 	)
 
 	for {
+		client, err := newVault(logger, addr)
+		if err != nil {
+			logger.ErrorContext(ctx, "error creating vault client", "err", err)
+			cancel()
+			return
+		}
+
 		errDelay = min((30*time.Second)*time.Duration(errCount), conf.Load().MaxCheckInterval)
 
 		if errCount > 0 {
@@ -38,7 +45,8 @@ func worker(ctx context.Context, logger *slog.Logger, client *api.Client, addr s
 		case <-time.After(conf.Load().CheckInterval + errDelay):
 			wlog.InfoContext(ctx, "running checks")
 
-			status, err := client.Sys().SealStatus()
+			var status *api.SealStatusResponse
+			status, err = client.Sys().SealStatus()
 			if err != nil {
 				errCount++
 				nerr := fmt.Errorf("checking seal status: %w", err)

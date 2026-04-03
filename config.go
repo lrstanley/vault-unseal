@@ -22,34 +22,48 @@ const (
 	minimumNodes          = 3
 )
 
+type TLSConfig struct {
+	SkipVerify bool   `name:"skip-verify"  env:"SKIP_VERIFY"  help:"disables tls certificate validation: DO NOT DO THIS" yaml:"skip_verify"`
+	ServerName string `name:"server-name"  env:"SERVER_NAME"  help:"server name to use for tls certificate validation" yaml:"server_name"`
+	CACertPath string `name:"ca-cert-path" env:"CA_CERT_PATH" help:"path to the CA certificate file (takes precedence over ca-cert and ca-path)" yaml:"ca_cert_path"`
+	CACert     string `name:"ca-cert"      env:"CA_CERT"      help:"CA certificate, pem encoded (takes precedence over ca-path)" yaml:"ca_cert"`
+	CAPath     string `name:"ca-path"      env:"CA_PATH"      help:"path to the CA certificate directory" yaml:"ca_path"`
+	ClientCert string `name:"client-cert"  env:"CLIENT_CERT"  help:"client certificate, pem encoded" yaml:"client_cert"`
+	ClientKey  string `name:"client-key"   env:"CLIENT_KEY"   help:"client key, pem encoded" yaml:"client_key"`
+}
+
+type EmailConfig struct {
+	Enabled       bool     `name:"enabled"         env:"ENABLED"         help:"enables email support" yaml:"enabled"`
+	Hostname      string   `name:"hostname"        env:"HOSTNAME"        help:"hostname of mail server" yaml:"hostname"`
+	Port          int      `name:"port"            env:"PORT"            help:"port of mail server" yaml:"port"`
+	Username      string   `name:"username"        env:"USERNAME"        help:"username to authenticate to mail server" yaml:"username"`
+	Password      string   `name:"password"        env:"PASSWORD"        help:"password to authenticate to mail server" yaml:"password"`
+	FromAddr      string   `name:"from-addr"       env:"FROM_ADDR"       help:"address to use as 'From'" yaml:"from_addr"`
+	SendAddrs     []string `name:"send-addrs"      env:"SEND_ADDRS"      help:"addresses to send notifications to" yaml:"send_addrs"`
+	TLSSkipVerify bool     `name:"tls-skip-verify" env:"TLS_SKIP_VERIFY" help:"skip SMTP TLS certificate validation" yaml:"tls_skip_verify"`
+	MandatoryTLS  bool     `name:"mandatory-tls"   env:"MANDATORY_TLS"   help:"require TLS for SMTP connections. Defaults to opportunistic." yaml:"mandatory_tls"`
+}
+
 // Config is a combo of the flags passed to the cli and the configuration file (if used).
 type Config struct {
 	ConfigPath string `name:"config" short:"c" env:"CONFIG_PATH" type:"path" help:"path to configuration file" placeholder:"PATH"`
 
 	Environment string `name:"environment" env:"ENVIRONMENT" help:"environment this cluster relates to (for logging)" yaml:"environment"`
 
-	CheckInterval    time.Duration `name:"check-interval" env:"CHECK_INTERVAL" help:"frequency of sealed checks against nodes" yaml:"check_interval"`
+	CheckInterval    time.Duration `name:"check-interval"     env:"CHECK_INTERVAL"     help:"frequency of sealed checks against nodes" yaml:"check_interval"`
 	MaxCheckInterval time.Duration `name:"max-check-interval" env:"MAX_CHECK_INTERVAL" help:"max time that vault-unseal will wait for an unseal check/attempt" yaml:"max_check_interval"`
 
 	AllowSingleNode bool     `name:"allow-single-node" env:"ALLOW_SINGLE_NODE" help:"allow vault-unseal to run on a single node" yaml:"allow_single_node"`
-	Nodes           []string `name:"nodes" env:"NODES" help:"nodes to connect/provide tokens to" yaml:"vault_nodes"`
-	TLSSkipVerify   bool     `name:"tls-skip-verify" env:"TLS_SKIP_VERIFY" help:"disables tls certificate validation: DO NOT DO THIS" yaml:"tls_skip_verify"`
-	Tokens          []string `name:"tokens" env:"TOKENS" help:"tokens to provide to nodes" yaml:"unseal_tokens"`
+	Nodes           []string `name:"nodes"             env:"NODES"             help:"nodes to connect/provide tokens to" yaml:"vault_nodes"`
+	Tokens          []string `name:"tokens"            env:"TOKENS"            help:"tokens to provide to nodes" yaml:"unseal_tokens"`
 
 	NotifyMaxElapsed time.Duration `name:"notify-max-elapsed" env:"NOTIFY_MAX_ELAPSED" help:"max time before the notification can be queued before it is sent" yaml:"notify_max_elapsed"`
 	NotifyQueueDelay time.Duration `name:"notify-queue-delay" env:"NOTIFY_QUEUE_DELAY" help:"time we queue the notification to allow as many notifications to be sent in one go (e.g. if no notification within X time, send all notifications)" yaml:"notify_queue_delay"`
 
-	Email struct {
-		Enabled       bool     `name:"enabled" env:"EMAIL_ENABLED" help:"enables email support" yaml:"enabled"`
-		Hostname      string   `name:"hostname" env:"EMAIL_HOSTNAME" help:"hostname of mail server" yaml:"hostname"`
-		Port          int      `name:"port" env:"EMAIL_PORT" help:"port of mail server" yaml:"port"`
-		Username      string   `name:"username" env:"EMAIL_USERNAME" help:"username to authenticate to mail server" yaml:"username"`
-		Password      string   `name:"password" env:"EMAIL_PASSWORD" help:"password to authenticate to mail server" yaml:"password"`
-		FromAddr      string   `name:"from-addr" env:"EMAIL_FROM_ADDR" help:"address to use as 'From'" yaml:"from_addr"`
-		SendAddrs     []string `name:"send-addrs" env:"EMAIL_SEND_ADDRS" help:"addresses to send notifications to" yaml:"send_addrs"`
-		TLSSkipVerify bool     `name:"tls-skip-verify" env:"EMAIL_TLS_SKIP_VERIFY" help:"skip SMTP TLS certificate validation" yaml:"tls_skip_verify"`
-		MandatoryTLS  bool     `name:"mandatory-tls" env:"EMAIL_MANDATORY_TLS" help:"require TLS for SMTP connections. Defaults to opportunistic." yaml:"mandatory_tls"`
-	} `embed:"" prefix:"email." group:"Email Options" yaml:"email"`
+	TLSSkipVerifyLegacy bool      `name:"tls-skip-verify" env:"-" hidden:"" yaml:"tls_skip_verify"` // Deprecated: use tls.skip_verify instead.
+	TLS                 TLSConfig `embed:"" prefix:"tls." envprefix:"TLS_" group:"TLS Options" yaml:"tls"`
+
+	Email EmailConfig `embed:"" prefix:"email." envprefix:"EMAIL_" group:"Email Options" yaml:"email"`
 
 	lastModifiedCheck time.Time `kong:"-" yaml:"-"`
 }

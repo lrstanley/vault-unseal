@@ -15,6 +15,7 @@
 - [Usage](#usage)
 - [Global flags](#global-flags)
   - [Logging Flags](#global-flags-logging-flags)
+  - [TLS Options](#global-flags-tls-options)
   - [Email Options](#global-flags-email-options)
 
 ## Helpful Links
@@ -46,7 +47,6 @@ The following flags are available globally. See command sections for additional 
 | <a id="flag-max-check-interval"></a>[🔗](#flag-max-check-interval) `--max-check-interval=DURATION` | `MAX_CHECK_INTERVAL` | **int64** (_time.Duration_) | max time that vault\-unseal will wait for an unseal check/attempt                                                                                    |
 | <a id="flag-allow-single-node"></a>[🔗](#flag-allow-single-node) `--allow-single-node`             | `ALLOW_SINGLE_NODE`  | **bool**                    | allow vault\-unseal to run on a single node                                                                                                          |
 | <a id="flag-nodes"></a>[🔗](#flag-nodes) `--nodes=NODES,...`                                       | `NODES`              | **slice** (_\[\]string_)    | nodes to connect/provide tokens to                                                                                                                   |
-| <a id="flag-tls-skip-verify"></a>[🔗](#flag-tls-skip-verify) `--tls-skip-verify`                   | `TLS_SKIP_VERIFY`    | **bool**                    | disables tls certificate validation: DO NOT DO THIS                                                                                                  |
 | <a id="flag-tokens"></a>[🔗](#flag-tokens) `--tokens=TOKENS,...`                                   | `TOKENS`             | **slice** (_\[\]string_)    | tokens to provide to nodes                                                                                                                           |
 | <a id="flag-notify-max-elapsed"></a>[🔗](#flag-notify-max-elapsed) `--notify-max-elapsed=DURATION` | `NOTIFY_MAX_ELAPSED` | **int64** (_time.Duration_) | max time before the notification can be queued before it is sent                                                                                     |
 | <a id="flag-notify-queue-delay"></a>[🔗](#flag-notify-queue-delay) `--notify-queue-delay=DURATION` | `NOTIFY_QUEUE_DELAY` | **int64** (_time.Duration_) | time we queue the notification to allow as many notifications to be sent in one go \(e.g. if no notification within X time, send all notifications\) |
@@ -60,6 +60,19 @@ The following flags are available globally. See command sections for additional 
 | <a id="flag-log-level"></a>[🔗](#flag-log-level) `--log.level="info"`<br><br>**flag options**:<br><ul><li>`none`</li><li>`debug`</li><li>`info`</li><li>`warn`</li><li>`error`</li></ul> | `LOG_LEVEL` | **string** | logging level \(none: disables logging\)     |
 | <a id="flag-log-json"></a>[🔗](#flag-log-json) `--log.json`                                                                                                                              | `LOG_JSON`  | **bool**   | output logs in JSON format                   |
 | <a id="flag-log-path"></a>[🔗](#flag-log-path) `--log.path=STRING`                                                                                                                       | `LOG_PATH`  | **string** | path to log file \(disables stderr logging\) |
+
+<a id="global-flags-tls-options"></a>
+### TLS Options
+
+| Flag(s)                                                                                      | Env vars           | Type       | Help                                                                            |
+|----------------------------------------------------------------------------------------------|--------------------|------------|---------------------------------------------------------------------------------|
+| <a id="flag-tls-skip-verify"></a>[🔗](#flag-tls-skip-verify) `--tls.skip-verify`           | `TLS_SKIP_VERIFY`  | **bool**   | disables tls certificate validation: DO NOT DO THIS                             |
+| <a id="flag-tls-server-name"></a>[🔗](#flag-tls-server-name) `--tls.server-name=STRING`    | `TLS_SERVER_NAME`  | **string** | server name to use for tls certificate validation                               |
+| <a id="flag-tls-ca-cert-path"></a>[🔗](#flag-tls-ca-cert-path) `--tls.ca-cert-path=STRING` | `TLS_CA_CERT_PATH` | **string** | path to the CA certificate file \(takes precedence over ca\-cert and ca\-path\) |
+| <a id="flag-tls-ca-cert"></a>[🔗](#flag-tls-ca-cert) `--tls.ca-cert=STRING`                | `TLS_CA_CERT`      | **string** | CA certificate, pem encoded \(takes precedence over ca\-path\)                  |
+| <a id="flag-tls-ca-path"></a>[🔗](#flag-tls-ca-path) `--tls.ca-path=STRING`                | `TLS_CA_PATH`      | **string** | path to the CA certificate directory                                            |
+| <a id="flag-tls-client-cert"></a>[🔗](#flag-tls-client-cert) `--tls.client-cert=STRING`    | `TLS_CLIENT_CERT`  | **string** | client certificate, pem encoded                                                 |
+| <a id="flag-tls-client-key"></a>[🔗](#flag-tls-client-key) `--tls.client-key=STRING`       | `TLS_CLIENT_KEY`   | **string** | client key, pem encoded                                                         |
 
 <a id="global-flags-email-options"></a>
 ### Email Options

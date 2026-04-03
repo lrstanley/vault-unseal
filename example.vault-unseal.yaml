@@ -1,5 +1,4 @@
 ---
-
 # named environment that vault-unseal is running in, gets passed in when sending
 # email alerts.
 environment: dev
@@ -36,9 +35,30 @@ unseal_tokens:
   - your-token
   - your-second-token
 
-# skip tls checks for the given vault instance. useful if your instance doesn't
-# have a certificate which has all of the server hostnames on it.
-tls_skip_verify: false
+# tls:
+#   # Skip TLS certificate validation. Do not do this.
+#   skip_verify: false
+#   # Server name to use for tls certificate validation.
+#   server_name: localhost
+#   # Path to the CA certificate file.
+#   ca_cert_path: /etc/ssl/certs/ca-certificates.crt
+#   # CA certificate, pem encoded.
+#   ca_cert: |
+#     -----BEGIN CERTIFICATE-----
+#     ...
+#     -----END CERTIFICATE-----
+#   # Path to the CA certificate directory.
+#   ca_path: /etc/ssl/certs
+#   # Client certificate, pem encoded.
+#   client_cert: |
+#     -----BEGIN CERTIFICATE-----
+#     ...
+#     -----END CERTIFICATE-----
+#   # Client key, pem encoded.
+#   client_key: |
+#     -----BEGIN PRIVATE KEY-----
+#     ...
+#     -----END PRIVATE KEY-----
 
 # email notifications. setting this to false will disable all notifications.
 email:

@@ -71,16 +71,8 @@ func main() {
 	var wg sync.WaitGroup
 
 	for _, addr := range conf.Load().Nodes {
-		var client *vapi.Client
-		client, err = newVault(logger, addr)
-		if err != nil {
-			logger.ErrorContext(ctx, "error creating vault client", "err", err)
-			exitCode = 1
-			continue
-		}
-
 		logger.InfoContext(ctx, "invoking worker", "addr", addr)
-		wg.Go(func() { worker(ctx, logger, client, addr) })
+		wg.Go(func() { worker(ctx, logger, cancel, addr) })
 	}
 
 	wg.Go(func() { notifier(ctx, logger) })
@@ -115,12 +107,23 @@ func newVault(logger *slog.Logger, addr string) (*vapi.Client, error) {
 		"addr", addr,
 	)
 
-	if err = vconfig.ConfigureTLS(&vapi.TLSConfig{Insecure: conf.Load().TLSSkipVerify}); err != nil {
+	c := conf.Load()
+
+	err = vconfig.ConfigureTLS(&vapi.TLSConfig{
+		Insecure:      c.TLS.SkipVerify || c.TLSSkipVerifyLegacy,
+		TLSServerName: c.TLS.ServerName,
+		CACert:        c.TLS.CACert,
+		CAPath:        c.TLS.CAPath,
+		ClientCert:    c.TLS.ClientCert,
+		ClientKey:     c.TLS.ClientKey,
+	})
+	if err != nil {
 		return nil, fmt.Errorf("error configuring tls config: %w", err)
 	}
 
 	var client *vapi.Client
-	if client, err = vapi.NewClient(vconfig); err != nil {
+	client, err = vapi.NewClient(vconfig)
+	if err != nil {
 		return nil, fmt.Errorf("error creating vault client: %w", err)
 	}
 
