@@ -50,16 +50,9 @@ func main() {
 
 	logger := cli.GetLogger()
 
-	err := syncConfigFile(ctx, logger)
+	err := syncConfig(ctx, logger)
 	if err != nil {
 		logger.ErrorContext(ctx, "error reading config", "error", err)
-		exitCode = 1
-		return
-	}
-
-	err = conf.Load().Validate(ctx, logger)
-	if err != nil {
-		logger.ErrorContext(ctx, "error validating config", "error", err)
 		exitCode = 1
 		return
 	}
@@ -82,7 +75,7 @@ func main() {
 			for {
 				time.Sleep(configRefreshInterval)
 
-				if rerr := syncConfigFile(ctx, logger); rerr != nil {
+				if rerr := syncConfig(ctx, logger); rerr != nil {
 					logger.ErrorContext(ctx, "error reading config", "err", rerr)
 					exitCode = 1
 					cancel()

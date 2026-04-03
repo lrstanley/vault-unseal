@@ -36,55 +36,40 @@ unseal_tokens:
   - your-second-token
 
 # tls:
-#   # Skip TLS certificate validation. Do not do this.
+#   # skip TLS certificate validation. Do not do this.
 #   skip_verify: false
-#   # Server name to use for tls certificate validation.
+#   # server name to use for tls certificate validation.
 #   server_name: localhost
-#   # Path to the CA certificate file.
+#   # path to the CA certificate file. takes precedence over ca_cert and ca_path.
 #   ca_cert_path: /etc/ssl/certs/ca-certificates.crt
-#   # CA certificate, pem encoded.
+#   # ca certificate, pem encoded. takes precedence over ca_path.
 #   ca_cert: |
 #     -----BEGIN CERTIFICATE-----
 #     ...
 #     -----END CERTIFICATE-----
-#   # Path to the CA certificate directory.
+#   # path to the CA certificate directory.
 #   ca_path: /etc/ssl/certs
-#   # Client certificate, pem encoded.
+#   # client certificate, pem encoded.
 #   client_cert: |
 #     -----BEGIN CERTIFICATE-----
 #     ...
 #     -----END CERTIFICATE-----
-#   # Client key, pem encoded.
+#   # client key, pem encoded.
 #   client_key: |
 #     -----BEGIN PRIVATE KEY-----
 #     ...
 #     -----END PRIVATE KEY-----
 
-# email notifications. setting this to false will disable all notifications.
-email:
-  enabled: false
-  hostname: smtp.hostname.com
-  port: 25
-  username: your-username
-  password: your-password
-  # address to send from.
-  from_addr: your-alerts@hostname.com
-  # addresses to send to. the first will be the TO, the second and on will be CC'd
-  # onto the message.
-  send_addrs:
-    - your-alert-group@hostname.com
-    - example-user@hostname.com
-  # Skip TLS certificate validation.
-  tls_skip_verify: false
-  # Require TLS for SMTP connections.
-  # The default is opportunistic.
-  mandatory_tls: false
-
-# notifications in vault-unseal queue up to prevent email spam (e.g. 20 alerts
-# in one email). this is the max allotted time an event can be queued before
-# the queue is sent as a notification.
-notify_max_elapsed: 10m
-
-# queue delay is the amount of time vault-unseal waits after the last received
-# notification, before it sends all of them in bulk.
-notify_queue_delay: 60s
+# notification settings.
+notify:
+  # notifications in vault-unseal queue up to prevent spam (e.g. 20 alerts
+  # in one notification). this is the max allotted time an event can be queued
+  # before the queue is sent as a notification.
+  max_elapsed: 2m
+  # queue delay is the amount of time vault-unseal waits after the last received
+  # notification, before it sends all of them in bulk.
+  queue_delay: 60s
+  # list of URLs to send notifications to. for more information, see:
+  #   https://shoutrrr.nickfedor.com/latest/services/overview/
+  urls:
+    - "slack://token:token@channel?color=good&icon=man-scientist&botname=Shoutrrrbot"

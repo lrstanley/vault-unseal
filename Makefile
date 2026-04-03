@@ -6,12 +6,10 @@ license:
 	curl -sL https://liam.sh/-/gh/g/license-header.sh | bash -s
 
 go-fetch:
-	go mod download
 	go mod tidy
 
 up:
 	go get -u ./...
-	go get -u -t ./...
 	go mod tidy
 
 clean:

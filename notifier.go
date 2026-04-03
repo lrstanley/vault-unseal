@@ -6,14 +6,15 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log/slog"
-	"os"
+	"slices"
 	"strings"
 	"time"
 
-	mail "gopkg.in/mail.v2"
+	"github.com/nicholas-fedor/shoutrrr"
+	"github.com/nicholas-fedor/shoutrrr/pkg/router"
+	"github.com/nicholas-fedor/shoutrrr/pkg/types"
 )
 
 var (
@@ -28,9 +29,9 @@ type notifyError struct {
 
 func notify(ctx context.Context, logger *slog.Logger, err error) {
 	err = fmt.Errorf("error: %w", err)
-	logger.ErrorContext(ctx, "notification", "err", err)
+	logger.ErrorContext(ctx, "notification", "error", err)
 
-	if !conf.Load().Email.Enabled {
+	if len(conf.Load().Notify.URLs) == 0 {
 		return
 	}
 
@@ -80,73 +81,58 @@ func sendQueue(ctx context.Context, logger *slog.Logger) {
 	text.WriteString(`vault-unseal ran into errors when attempting to check seal status/unseal. here are the errors:
 `)
 	for i := range notifyQueue {
-		fmt.Fprintf(&text, "\n%s :: %v", notifyQueue[i].timestamp.Format(time.RFC822), notifyQueue[i].err)
+		fmt.Fprintf(&text, "\n%s :: %v", notifyQueue[i].timestamp.Format(time.RFC3339), notifyQueue[i].err)
 	}
 
 	var err error
 
-	smtp := mail.NewDialer(
-		conf.Load().Email.Hostname,
-		conf.Load().Email.Port,
-		conf.Load().Email.Username,
-		conf.Load().Email.Password,
+	fmt.Fprintf(
+		&text, "\n\nsent from vault-unseal. version: %s, compile date: %s",
+		version, date,
 	)
-	smtp.TLSConfig = &tls.Config{
-		InsecureSkipVerify: conf.Load().Email.TLSSkipVerify, //nolint:gosec
-		ServerName:         conf.Load().Email.Hostname,
-	}
 
-	if conf.Load().Email.MandatoryTLS {
-		smtp.StartTLSPolicy = mail.MandatoryStartTLS
-	}
-
-	smtp.LocalName, err = os.Hostname()
+	var r *router.ServiceRouter
+	r, err = shoutrrr.NewSender(&shoutrrrLogger{logger}, conf.Load().Notify.URLs...)
 	if err != nil {
-		smtp.LocalName = "localhost"
-	}
-
-	s, err := smtp.Dial()
-	if err != nil {
-		logger.ErrorContext(
-			ctx, "unable to make smtp connection",
-			"error", err,
-			"hostname", conf.Load().Email.Hostname,
-			"port", conf.Load().Email.Port,
-		)
+		logger.ErrorContext(ctx, "unable to create shoutrrr sender", "error", err)
 		return
 	}
 
-	fmt.Fprintf(
-		&text, "\n\nsent from vault-unseal. version: %s, compile date: %s, hostname: %s",
-		version, date, smtp.LocalName,
-	)
+	r.Timeout = 10 * time.Second
 
-	msg := mail.NewMessage()
-	msg.SetHeader("From", conf.Load().Email.FromAddr)
-	msg.SetHeader(
-		"Subject",
-		fmt.Sprintf(
-			"vault-unseal: %s: %d errors occurred",
+	var services []string
+	var name string
+	for _, url := range conf.Load().Notify.URLs {
+		name, _, err = r.ExtractServiceName(url)
+		if err != nil {
+			logger.ErrorContext(ctx, "unable to extract service name from URL", "error", err)
+			continue
+		}
+		services = append(services, name)
+	}
+
+	errs := r.Send(text.String(), &types.Params{
+		types.TitleKey: fmt.Sprintf(
+			"vault-unseal: %s: %d error(s) occurred",
 			conf.Load().Environment,
 			len(notifyQueue),
 		),
-	)
-	msg.SetBody("text/plain", text.String())
+	})
 
-	msg.SetHeader("To", conf.Load().Email.SendAddrs[0])
-	if len(conf.Load().Email.SendAddrs) > 1 {
-		msg.SetHeader("CC", conf.Load().Email.SendAddrs[1:]...)
-	}
+	errs = slices.DeleteFunc(errs, func(err error) bool { return err == nil })
 
-	err = mail.Send(s, msg)
-	if err != nil {
-		logger.ErrorContext(ctx, "unable to send notification", "error", err)
+	if len(errs) > 0 {
+		logger.ErrorContext(
+			ctx, "unable to send notifications to one or more services",
+			"errors", errs,
+			"services", strings.Join(services, ","),
+		)
 		return
 	}
 
 	logger.InfoContext(
 		ctx, "successfully sent notifications",
-		"to", strings.Join(conf.Load().Email.SendAddrs, ","),
+		"services", strings.Join(services, ","),
 	)
 	notifyQueue = nil
 }

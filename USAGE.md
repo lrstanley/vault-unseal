@@ -15,8 +15,8 @@
 - [Usage](#usage)
 - [Global flags](#global-flags)
   - [Logging Flags](#global-flags-logging-flags)
+  - [Notify Options](#global-flags-notify-options)
   - [TLS Options](#global-flags-tls-options)
-  - [Email Options](#global-flags-email-options)
 
 ## Helpful Links
 
@@ -36,21 +36,19 @@ $ vault-unseal <command> [flags]
 
 The following flags are available globally. See command sections for additional flags.
 
-| Flag(s)                                                                                              | Env vars             | Type                        | Help                                                                                                                                                 |
-|------------------------------------------------------------------------------------------------------|----------------------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <a id="flag-help"></a>[🔗](#flag-help) `-h, --help`                                                | -                    | **bool**                    | Show context\-sensitive help.                                                                                                                        |
-| <a id="flag-version"></a>[🔗](#flag-version) `-v, --version`                                       | -                    | **bool**                    | prints version information and exits                                                                                                                 |
-| <a id="flag-version-json"></a>[🔗](#flag-version-json) `--version-json`                            | -                    | **bool**                    | prints version information in JSON format and exits                                                                                                  |
-| <a id="flag-config"></a>[🔗](#flag-config) `-c, --config=PATH`                                     | `CONFIG_PATH`        | **string**                  | path to configuration file                                                                                                                           |
-| <a id="flag-environment"></a>[🔗](#flag-environment) `--environment=STRING`                        | `ENVIRONMENT`        | **string**                  | environment this cluster relates to \(for logging\)                                                                                                  |
-| <a id="flag-check-interval"></a>[🔗](#flag-check-interval) `--check-interval=DURATION`             | `CHECK_INTERVAL`     | **int64** (_time.Duration_) | frequency of sealed checks against nodes                                                                                                             |
-| <a id="flag-max-check-interval"></a>[🔗](#flag-max-check-interval) `--max-check-interval=DURATION` | `MAX_CHECK_INTERVAL` | **int64** (_time.Duration_) | max time that vault\-unseal will wait for an unseal check/attempt                                                                                    |
-| <a id="flag-allow-single-node"></a>[🔗](#flag-allow-single-node) `--allow-single-node`             | `ALLOW_SINGLE_NODE`  | **bool**                    | allow vault\-unseal to run on a single node                                                                                                          |
-| <a id="flag-nodes"></a>[🔗](#flag-nodes) `--nodes=NODES,...`                                       | `NODES`              | **slice** (_\[\]string_)    | nodes to connect/provide tokens to                                                                                                                   |
-| <a id="flag-tokens"></a>[🔗](#flag-tokens) `--tokens=TOKENS,...`                                   | `TOKENS`             | **slice** (_\[\]string_)    | tokens to provide to nodes                                                                                                                           |
-| <a id="flag-notify-max-elapsed"></a>[🔗](#flag-notify-max-elapsed) `--notify-max-elapsed=DURATION` | `NOTIFY_MAX_ELAPSED` | **int64** (_time.Duration_) | max time before the notification can be queued before it is sent                                                                                     |
-| <a id="flag-notify-queue-delay"></a>[🔗](#flag-notify-queue-delay) `--notify-queue-delay=DURATION` | `NOTIFY_QUEUE_DELAY` | **int64** (_time.Duration_) | time we queue the notification to allow as many notifications to be sent in one go \(e.g. if no notification within X time, send all notifications\) |
-| <a id="flag-debug"></a>[🔗](#flag-debug) `-D, --debug`                                             | -                    | **bool**                    | enables debug mode                                                                                                                                   |
+| Flag(s)                                                                                              | Env vars             | Type                        | Help                                                              |
+|------------------------------------------------------------------------------------------------------|----------------------|-----------------------------|-------------------------------------------------------------------|
+| <a id="flag-help"></a>[🔗](#flag-help) `-h, --help`                                                | -                    | **bool**                    | Show context\-sensitive help.                                     |
+| <a id="flag-version"></a>[🔗](#flag-version) `-v, --version`                                       | -                    | **bool**                    | prints version information and exits                              |
+| <a id="flag-version-json"></a>[🔗](#flag-version-json) `--version-json`                            | -                    | **bool**                    | prints version information in JSON format and exits               |
+| <a id="flag-config"></a>[🔗](#flag-config) `-c, --config=PATH`                                     | `CONFIG_PATH`        | **string**                  | path to configuration file                                        |
+| <a id="flag-environment"></a>[🔗](#flag-environment) `--environment=STRING`                        | `ENVIRONMENT`        | **string**                  | environment this cluster relates to \(for logging\)               |
+| <a id="flag-check-interval"></a>[🔗](#flag-check-interval) `--check-interval=DURATION`             | `CHECK_INTERVAL`     | **int64** (_time.Duration_) | frequency of sealed checks against nodes                          |
+| <a id="flag-max-check-interval"></a>[🔗](#flag-max-check-interval) `--max-check-interval=DURATION` | `MAX_CHECK_INTERVAL` | **int64** (_time.Duration_) | max time that vault\-unseal will wait for an unseal check/attempt |
+| <a id="flag-allow-single-node"></a>[🔗](#flag-allow-single-node) `--allow-single-node`             | `ALLOW_SINGLE_NODE`  | **bool**                    | allow vault\-unseal to run on a single node                       |
+| <a id="flag-nodes"></a>[🔗](#flag-nodes) `--nodes=NODES,...`                                       | `NODES`              | **slice** (_\[\]string_)    | nodes to connect/provide tokens to                                |
+| <a id="flag-tokens"></a>[🔗](#flag-tokens) `--tokens=TOKENS,...`                                   | `TOKENS`             | **slice** (_\[\]string_)    | tokens to provide to nodes                                        |
+| <a id="flag-debug"></a>[🔗](#flag-debug) `-D, --debug`                                             | -                    | **bool**                    | enables debug mode                                                |
 
 <a id="global-flags-logging-flags"></a>
 ### Logging Flags
@@ -60,6 +58,15 @@ The following flags are available globally. See command sections for additional 
 | <a id="flag-log-level"></a>[🔗](#flag-log-level) `--log.level="info"`<br><br>**flag options**:<br><ul><li>`none`</li><li>`debug`</li><li>`info`</li><li>`warn`</li><li>`error`</li></ul> | `LOG_LEVEL` | **string** | logging level \(none: disables logging\)     |
 | <a id="flag-log-json"></a>[🔗](#flag-log-json) `--log.json`                                                                                                                              | `LOG_JSON`  | **bool**   | output logs in JSON format                   |
 | <a id="flag-log-path"></a>[🔗](#flag-log-path) `--log.path=STRING`                                                                                                                       | `LOG_PATH`  | **string** | path to log file \(disables stderr logging\) |
+
+<a id="global-flags-notify-options"></a>
+### Notify Options
+
+| Flag(s)                                                                                              | Env vars             | Type                        | Help                                                                                                                                                 |
+|------------------------------------------------------------------------------------------------------|----------------------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| <a id="flag-notify-max-elapsed"></a>[🔗](#flag-notify-max-elapsed) `--notify.max-elapsed=DURATION` | `NOTIFY_MAX_ELAPSED` | **int64** (_time.Duration_) | max time before the notification can be queued before it is sent                                                                                     |
+| <a id="flag-notify-queue-delay"></a>[🔗](#flag-notify-queue-delay) `--notify.queue-delay=DURATION` | `NOTIFY_QUEUE_DELAY` | **int64** (_time.Duration_) | time we queue the notification to allow as many notifications to be sent in one go \(e.g. if no notification within X time, send all notifications\) |
+| <a id="flag-notify-urls"></a>[🔗](#flag-notify-urls) `--notify.urls=NOTIFY.URLS,...`               | `NOTIFY_URLS`        | **slice** (_\[\]string_)    | shoutrrr URLs to send notifications to                                                                                                               |
 
 <a id="global-flags-tls-options"></a>
 ### TLS Options
@@ -73,18 +80,3 @@ The following flags are available globally. See command sections for additional 
 | <a id="flag-tls-ca-path"></a>[🔗](#flag-tls-ca-path) `--tls.ca-path=STRING`                | `TLS_CA_PATH`      | **string** | path to the CA certificate directory                                            |
 | <a id="flag-tls-client-cert"></a>[🔗](#flag-tls-client-cert) `--tls.client-cert=STRING`    | `TLS_CLIENT_CERT`  | **string** | client certificate, pem encoded                                                 |
 | <a id="flag-tls-client-key"></a>[🔗](#flag-tls-client-key) `--tls.client-key=STRING`       | `TLS_CLIENT_KEY`   | **string** | client key, pem encoded                                                         |
-
-<a id="global-flags-email-options"></a>
-### Email Options
-
-| Flag(s)                                                                                                    | Env vars                | Type                     | Help                                                         |
-|------------------------------------------------------------------------------------------------------------|-------------------------|--------------------------|--------------------------------------------------------------|
-| <a id="flag-email-enabled"></a>[🔗](#flag-email-enabled) `--email.enabled`                               | `EMAIL_ENABLED`         | **bool**                 | enables email support                                        |
-| <a id="flag-email-hostname"></a>[🔗](#flag-email-hostname) `--email.hostname=STRING`                     | `EMAIL_HOSTNAME`        | **string**               | hostname of mail server                                      |
-| <a id="flag-email-port"></a>[🔗](#flag-email-port) `--email.port=INT`                                    | `EMAIL_PORT`            | **int**                  | port of mail server                                          |
-| <a id="flag-email-username"></a>[🔗](#flag-email-username) `--email.username=STRING`                     | `EMAIL_USERNAME`        | **string**               | username to authenticate to mail server                      |
-| <a id="flag-email-password"></a>[🔗](#flag-email-password) `--email.password=STRING`                     | `EMAIL_PASSWORD`        | **string**               | password to authenticate to mail server                      |
-| <a id="flag-email-from-addr"></a>[🔗](#flag-email-from-addr) `--email.from-addr=STRING`                  | `EMAIL_FROM_ADDR`       | **string**               | address to use as 'From'                                     |
-| <a id="flag-email-send-addrs"></a>[🔗](#flag-email-send-addrs) `--email.send-addrs=EMAIL.SEND-ADDRS,...` | `EMAIL_SEND_ADDRS`      | **slice** (_\[\]string_) | addresses to send notifications to                           |
-| <a id="flag-email-tls-skip-verify"></a>[🔗](#flag-email-tls-skip-verify) `--email.tls-skip-verify`       | `EMAIL_TLS_SKIP_VERIFY` | **bool**                 | skip SMTP TLS certificate validation                         |
-| <a id="flag-email-mandatory-tls"></a>[🔗](#flag-email-mandatory-tls) `--email.mandatory-tls`             | `EMAIL_MANDATORY_TLS`   | **bool**                 | require TLS for SMTP connections. Defaults to opportunistic. |
