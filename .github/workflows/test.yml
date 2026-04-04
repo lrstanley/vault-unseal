@@ -27,5 +27,7 @@ jobs:
       upload-artifacts: true
   docker-test:
     needs: [go-test, go-lint]
-    uses: lrstanley/.github/.github/workflows/docker-release.yml@master
     secrets: inherit
+    uses: lrstanley/.github/.github/workflows/docker-release.yml@master
+    with:
+      platforms: "linux/amd64,linux/arm64"
