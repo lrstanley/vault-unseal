@@ -10,6 +10,7 @@ jobs:
     secrets: inherit
     with:
       scan: false
+      platforms: "linux/amd64,linux/arm64"
   go-release:
     uses: lrstanley/.github/.github/workflows/lang-go-release.yml@master
     secrets: inherit
