@@ -153,6 +153,22 @@ page for prebuilt versions.
 
 ```console
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:master
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:1.0.0
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:latest
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.7.2
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.7.1
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.7.0
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.6.0
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.5.1
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.5.0
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.4.1
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.4.0
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.3.0
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.4
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.3
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.2
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.1
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:0.2.0
 ```
 <!-- template:end:ghcr -->
 
