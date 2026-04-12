@@ -1,8 +1,0 @@
-email:
-  enabled: false
-tls_skip_verify: true
-unseal_tokens:
-  - YOUR_TOKEN_HERE
-vault_nodes:
-  - http://localhost:8200
-allow_single_node: true
