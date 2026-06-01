@@ -59,8 +59,8 @@ github.com/jarcoal/httpmock v1.4.1 h1:0Ju+VCFuARfFlhVXFc2HxlcQkfB+Xq12/EotHko+x2
 github.com/jarcoal/httpmock v1.4.1/go.mod h1:ftW1xULwo+j0R0JJkJIIi7UKigZUXCLLanykgjwBXL0=
 github.com/lmittmann/tint v1.1.3 h1:Hv4EaHWXQr+GTFnOU4VKf8UvAtZgn0VuKT+G0wFlO3I=
 github.com/lmittmann/tint v1.1.3/go.mod h1:HIS3gSy7qNwGCj+5oRjAutErFBl4BzdQP6cJZ0NfMwE=
-github.com/lrstanley/clix/v2 v2.0.0 h1:By5ypCwwWwKjUdUGGs4nI+W1Oqt4Bz+aGDaqM7tryzQ=
-github.com/lrstanley/clix/v2 v2.0.0/go.mod h1:QC/Dx4iZ0r3mlJk5S+7Bb6DmEem03ZRwMCy0h/DJFG0=
+github.com/lrstanley/clix/v2 v2.0.1 h1:7AIhr6tb2owsCanmnKhzDmui5lAEcPJ77T+7yYQatfQ=
+github.com/lrstanley/clix/v2 v2.0.1/go.mod h1:0Z82Kbrv3CNm6dBiCWaLcQYuG6K0xEFIh8OVR8iB6Zw=
 github.com/mattn/go-colorable v0.1.14 h1:9A9LHSqF/7dyVVX6g0U9cwm9pG3kP9gSzcuIPHPsaIE=
 github.com/mattn/go-colorable v0.1.14/go.mod h1:6LmQG8QLFO4G5z1gPvYEzlUgJ2wF+stgPZH1UqBm1s8=
 github.com/mattn/go-isatty v0.0.21 h1:xYae+lCNBP7QuW4PUnNG61ffM4hVIfm+zUzDuSzYLGs=
