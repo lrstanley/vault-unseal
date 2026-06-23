@@ -105,7 +105,8 @@ func newVault(logger *slog.Logger, addr string) (*vapi.Client, error) {
 	err = vconfig.ConfigureTLS(&vapi.TLSConfig{
 		Insecure:      c.TLS.SkipVerify || c.TLSSkipVerifyLegacy,
 		TLSServerName: c.TLS.ServerName,
-		CACert:        c.TLS.CACert,
+		CACert:        c.TLS.CACertPath,
+		CACertBytes:   []byte(c.TLS.CACert),
 		CAPath:        c.TLS.CAPath,
 		ClientCert:    c.TLS.ClientCert,
 		ClientKey:     c.TLS.ClientKey,
