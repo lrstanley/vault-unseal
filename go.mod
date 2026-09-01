@@ -1,16 +1,16 @@
 module github.com/lrstanley/vault-unseal
 
-go 1.26.0
+go 1.27.0
 
 require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/hashicorp/vault/api v1.23.0
-	github.com/lrstanley/clix/v2 v2.0.1
+	github.com/lrstanley/clix/v2 v2.0.3
 	github.com/nicholas-fedor/shoutrrr v0.17.0
 )
 
 require (
-	github.com/alecthomas/kong v1.16.0 // indirect
+	github.com/alecthomas/kong v1.16.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/eclipse/paho.golang v0.23.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
