@@ -1,12 +1,12 @@
 module github.com/lrstanley/vault-unseal
 
-go 1.26.0
+go 1.27
 
 require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/hashicorp/vault/api v1.23.0
 	github.com/lrstanley/clix/v2 v2.0.1
-	github.com/nicholas-fedor/shoutrrr v0.17.0
+	github.com/nicholas-fedor/shoutrrr v0.21.1
 )
 
 require (
@@ -30,9 +30,17 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
-	golang.org/x/net v0.57.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/term v0.45.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
+	golang.org/x/crypto v0.57.0 // indirect
+	golang.org/x/mod v0.41.0 // indirect
+	golang.org/x/net v0.59.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/term v0.46.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
+	golang.org/x/tools v0.50.0 // indirect
+	mellium.im/reader v0.1.0 // indirect
+	mellium.im/sasl v0.3.2 // indirect
+	mellium.im/xmlstream v0.15.4 // indirect
+	mellium.im/xmpp v0.23.0 // indirect
 )
