@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -122,9 +123,11 @@ func sendQueue(ctx context.Context, logger *slog.Logger) {
 	errs = slices.DeleteFunc(errs, func(err error) bool { return err == nil })
 
 	if len(errs) > 0 {
+		// slog's JSON handler serializes a []error with encoding/json, which
+		// renders most error types as "{}", so join them into a single error.
 		logger.ErrorContext(
 			ctx, "unable to send notifications to one or more services",
-			"errors", errs,
+			"error", errors.Join(errs...),
 			"services", strings.Join(services, ","),
 		)
 		return
