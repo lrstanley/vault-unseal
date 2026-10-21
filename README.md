@@ -151,7 +151,7 @@ page for prebuilt versions.
 
 ```console
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:master
-$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:1.0.1
+$ docker run -it --rm ghcr.io/lrstanley/vault-unseal:1.0.2
 $ docker run -it --rm ghcr.io/lrstanley/vault-unseal:latest
 ```
 <!-- template:end:ghcr -->
