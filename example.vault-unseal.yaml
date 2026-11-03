@@ -64,12 +64,24 @@ unseal_tokens:
 notify:
   # notifications in vault-unseal queue up to prevent spam (e.g. 20 alerts
   # in one notification). this is the max allotted time an event can be queued
-  # before the queue is sent as a notification.
+  # before the queue is sent as a notification. if unset or 0, notifications
+  # are sent immediately, without queueing.
   max_elapsed: 2m
   # queue delay is the amount of time vault-unseal waits after the last received
-  # notification, before it sends all of them in bulk.
+  # notification, before it sends all of them in bulk. only used when
+  # max_elapsed is set. must be between 10s and 10m.
   queue_delay: 60s
   # list of URLs to send notifications to. for more information, see:
   #   https://shoutrrr.nickfedor.com/latest/services/overview/
   urls:
     - "slack://token:token@channel?color=good&icon=man-scientist&botname=Shoutrrrbot"
+  # event types to send notifications for. if unset or empty, notifications are
+  # sent for all events. valid event types:
+  #   * unseal:            a sealed node was successfully unsealed.
+  #   * seal_status_error: checking the seal status of a node failed (e.g.
+  #                        network errors or timeouts).
+  #   * unseal_error:      providing an unseal token to a node failed.
+  #   * error:             shorthand for all error event types.
+  #
+  # e.g. to only be notified when vault-unseal unseals a node:
+  # events: [unseal]

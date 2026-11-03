@@ -26,11 +26,11 @@ go-dlv: go-prepare
 		${PACKAGE} -- --debug
 
 go-debug: clean
-	go run *.go --debug
+	go run . --debug
 
 go-prepare: go-fetch clean
 	go generate -x ./...
-	go run *.go generate-markdown > USAGE.md
+	go run . generate-markdown > USAGE.md
 
 build: go-prepare go-fetch
 	CGO_ENABLED=0 \

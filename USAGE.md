@@ -41,6 +41,7 @@ The following flags are available globally. See command sections for additional 
 | Flag(s)                                                                                              | Env vars             | Type                        | Help                                                              |
 |------------------------------------------------------------------------------------------------------|----------------------|-----------------------------|-------------------------------------------------------------------|
 | <a id="flag-help"></a>[🔗](#flag-help) `-h, --help`                                                | -                    | **bool**                    | Show context\-sensitive help.                                     |
+| <a id="flag-no-dot-env"></a>[🔗](#flag-no-dot-env) `--no-dot-env`                                  | `NO_DOT_ENV`         | **bool**                    | disables loading .env files                                       |
 | <a id="flag-version"></a>[🔗](#flag-version) `-v, --version`                                       | -                    | **bool**                    | prints version information and exits                              |
 | <a id="flag-version-json"></a>[🔗](#flag-version-json) `--version-json`                            | -                    | **bool**                    | prints version information in JSON format and exits               |
 | <a id="flag-config"></a>[🔗](#flag-config) `-c, --config=PATH`                                     | `CONFIG_PATH`        | **string**                  | path to configuration file                                        |
@@ -50,7 +51,7 @@ The following flags are available globally. See command sections for additional 
 | <a id="flag-allow-single-node"></a>[🔗](#flag-allow-single-node) `--allow-single-node`             | `ALLOW_SINGLE_NODE`  | **bool**                    | allow vault\-unseal to run on a single node                       |
 | <a id="flag-nodes"></a>[🔗](#flag-nodes) `--nodes=NODES,...`                                       | `NODES`              | **slice** (_\[\]string_)    | nodes to connect/provide tokens to                                |
 | <a id="flag-tokens"></a>[🔗](#flag-tokens) `--tokens=TOKENS,...`                                   | `TOKENS`             | **slice** (_\[\]string_)    | tokens to provide to nodes                                        |
-| <a id="flag-debug"></a>[🔗](#flag-debug) `-D, --debug`                                             | -                    | **bool**                    | enables debug mode                                                |
+| <a id="flag-debug"></a>[🔗](#flag-debug) `-D, --debug`                                             | `DEBUG`              | **bool**                    | enables debug mode                                                |
 
 <a id="global-flags-logging-flags"></a>
 ### Logging Flags
@@ -64,11 +65,12 @@ The following flags are available globally. See command sections for additional 
 <a id="global-flags-notify-options"></a>
 ### Notify Options
 
-| Flag(s)                                                                                              | Env vars             | Type                        | Help                                                                                                                                                 |
-|------------------------------------------------------------------------------------------------------|----------------------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <a id="flag-notify-max-elapsed"></a>[🔗](#flag-notify-max-elapsed) `--notify.max-elapsed=DURATION` | `NOTIFY_MAX_ELAPSED` | **int64** (_time.Duration_) | max time before the notification can be queued before it is sent                                                                                     |
-| <a id="flag-notify-queue-delay"></a>[🔗](#flag-notify-queue-delay) `--notify.queue-delay=DURATION` | `NOTIFY_QUEUE_DELAY` | **int64** (_time.Duration_) | time we queue the notification to allow as many notifications to be sent in one go \(e.g. if no notification within X time, send all notifications\) |
-| <a id="flag-notify-urls"></a>[🔗](#flag-notify-urls) `--notify.urls=NOTIFY.URLS,...`               | `NOTIFY_URLS`        | **slice** (_\[\]string_)    | shoutrrr URLs to send notifications to                                                                                                               |
+| Flag(s)                                                                                              | Env vars             | Type                        | Help                                                                                                                                                                                                       |
+|------------------------------------------------------------------------------------------------------|----------------------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| <a id="flag-notify-max-elapsed"></a>[🔗](#flag-notify-max-elapsed) `--notify.max-elapsed=DURATION` | `NOTIFY_MAX_ELAPSED` | **int64** (_time.Duration_) | max time a notification can be queued before the queue is sent. 0 sends notifications immediately \(default\)                                                                                              |
+| <a id="flag-notify-queue-delay"></a>[🔗](#flag-notify-queue-delay) `--notify.queue-delay=DURATION` | `NOTIFY_QUEUE_DELAY` | **int64** (_time.Duration_) | time we queue the notification to allow as many notifications to be sent in one go \(e.g. if no notification within X time, send all notifications\). only used when max\-elapsed is set. min 10s, max 10m |
+| <a id="flag-notify-urls"></a>[🔗](#flag-notify-urls) `--notify.urls=NOTIFY.URLS,...`               | `NOTIFY_URLS`        | **slice** (_\[\]string_)    | shoutrrr URLs to send notifications to                                                                                                                                                                     |
+| <a id="flag-notify-events"></a>[🔗](#flag-notify-events) `--notify.events=NOTIFY.EVENTS,...`       | `NOTIFY_EVENTS`      | **slice** (_\[\]string_)    | event types to send notifications for: unseal, seal\_status\_error, unseal\_error, or error \(all error types\). defaults to all events                                                                    |
 
 <a id="global-flags-tls-options"></a>
 ### TLS Options

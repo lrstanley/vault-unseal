@@ -66,7 +66,7 @@ func worker(ctx context.Context, logger *slog.Logger, cancel context.CancelFunc,
 					}
 				}
 
-				notify(ctx, wlog, nerr)
+				notify(ctx, wlog, eventSealStatusError, nerr)
 				continue
 			}
 			wlog.InfoContext(ctx, "seal status", "status", status)
@@ -93,15 +93,17 @@ func worker(ctx context.Context, logger *slog.Logger, cancel context.CancelFunc,
 				var resp *api.SealStatusResponse
 				resp, err = client.Sys().Unseal(token)
 				if err != nil {
-					notify(ctx, wlog, fmt.Errorf("using unseal key %d on %v: %w", i+1, addr, err))
+					notify(ctx, wlog, eventUnsealError, fmt.Errorf("using unseal key %d on %v: %w", i+1, addr, err))
 					errCount++
 					continue
 				}
 
 				wlog.InfoContext(ctx, "token successfully sent")
 				if !resp.Sealed {
-					notify(ctx, wlog, fmt.Errorf("(was sealed) %v now unsealed with tokens", addr))
-					continue
+					notify(ctx, wlog, eventUnseal, fmt.Errorf("(was sealed) %v now unsealed with tokens", addr))
+					// Node is unsealed, remaining tokens aren't needed (and would
+					// trigger duplicate unseal notifications).
+					break
 				}
 			}
 		}

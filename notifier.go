@@ -18,25 +18,70 @@ import (
 	"github.com/nicholas-fedor/shoutrrr/pkg/types"
 )
 
-var (
-	notifyCh    = make(chan error, 20)
-	notifyQueue = []notifyError{}
+// eventKind is the type of event a notification is sent for.
+type eventKind string
+
+const (
+	// eventUnseal is sent when a sealed node was successfully unsealed.
+	eventUnseal eventKind = "unseal"
+	// eventSealStatusError is sent when checking the seal status of a node
+	// fails (e.g. network errors, timeouts).
+	eventSealStatusError eventKind = "seal_status_error"
+	// eventUnsealError is sent when providing an unseal token to a node fails.
+	eventUnsealError eventKind = "unseal_error"
+
+	// eventGroupError is a configuration alias for all error event kinds.
+	eventGroupError = "error"
 )
 
-type notifyError struct {
+var allEventKinds = []eventKind{eventUnseal, eventSealStatusError, eventUnsealError}
+
+func (k eventKind) isError() bool {
+	return k != eventUnseal
+}
+
+func joinEventKinds(kinds []eventKind) string {
+	names := make([]string, len(kinds))
+	for i, kind := range kinds {
+		names[i] = string(kind)
+	}
+	return strings.Join(names, ", ")
+}
+
+var (
+	notifyCh    = make(chan notifyEvent, 20)
+	notifyQueue = []notifyEvent{}
+)
+
+type notifyEvent struct {
 	timestamp time.Time
+	kind      eventKind
 	err       error
 }
 
-func notify(ctx context.Context, logger *slog.Logger, err error) {
-	err = fmt.Errorf("error: %w", err)
-	logger.ErrorContext(ctx, "notification", "error", err)
+// notify logs the event, and queues it to be sent as a notification, if
+// notifications are enabled for the event kind.
+func notify(ctx context.Context, logger *slog.Logger, kind eventKind, err error) {
+	if kind.isError() {
+		err = fmt.Errorf("error: %w", err)
+		logger.ErrorContext(ctx, "notification", "event", kind, "error", err)
+	} else {
+		err = fmt.Errorf("%s: %w", kind, err)
+		logger.InfoContext(ctx, "notification", "event", kind, "message", err)
+	}
 
-	if len(conf.Load().Notify.URLs) == 0 {
+	c := conf.Load()
+
+	if len(c.Notify.URLs) == 0 {
 		return
 	}
 
-	notifyCh <- err
+	if !c.Notify.allows(kind) {
+		logger.DebugContext(ctx, "notification filtered by notify events config", "event", kind)
+		return
+	}
+
+	notifyCh <- notifyEvent{timestamp: time.Now(), kind: kind, err: err}
 }
 
 func notifier(ctx context.Context, logger *slog.Logger) {
@@ -56,13 +101,13 @@ func notifier(ctx context.Context, logger *slog.Logger) {
 		case <-ctx.Done():
 			sendQueue(ctx, nlog)
 			return
-		case nerr := <-notifyCh:
-			notifyQueue = append(notifyQueue, notifyError{timestamp: time.Now(), err: nerr})
+		case event := <-notifyCh:
+			notifyQueue = append(notifyQueue, event)
 
-			if time.Since(notifyQueue[0].timestamp) >= conf.Load().NotifyMaxElapsed {
+			if time.Since(notifyQueue[0].timestamp) >= conf.Load().Notify.maxElapsed {
 				sendQueue(ctx, nlog)
 			}
-		case <-time.After(conf.Load().NotifyQueueDelay):
+		case <-time.After(conf.Load().Notify.queueDelay):
 			sendQueue(ctx, nlog)
 		}
 	}
@@ -78,20 +123,9 @@ func sendQueue(ctx context.Context, logger *slog.Logger) {
 		"count", len(notifyQueue),
 	)
 
-	var text strings.Builder
-	text.WriteString(`vault-unseal ran into errors when attempting to check seal status/unseal. here are the errors:
-`)
-	for i := range notifyQueue {
-		fmt.Fprintf(&text, "\n%s :: %v", notifyQueue[i].timestamp.Format(time.RFC3339), notifyQueue[i].err)
-	}
+	title, body := formatNotification(conf.Load().Environment, notifyQueue)
 
 	var err error
-
-	fmt.Fprintf(
-		&text, "\n\nsent from vault-unseal. version: %s, compile date: %s",
-		version, date,
-	)
-
 	var r *router.ServiceRouter
 	r, err = shoutrrr.NewSender(&shoutrrrLogger{logger}, conf.Load().Notify.URLs...)
 	if err != nil {
@@ -112,13 +146,7 @@ func sendQueue(ctx context.Context, logger *slog.Logger) {
 		services = append(services, name)
 	}
 
-	errs := r.Send(text.String(), &types.Params{
-		types.TitleKey: fmt.Sprintf(
-			"vault-unseal: %s: %d error(s) occurred",
-			conf.Load().Environment,
-			len(notifyQueue),
-		),
-	})
+	errs := r.Send(body, &types.Params{types.TitleKey: title})
 
 	errs = slices.DeleteFunc(errs, func(err error) bool { return err == nil })
 
@@ -138,4 +166,45 @@ func sendQueue(ctx context.Context, logger *slog.Logger) {
 		"services", strings.Join(services, ","),
 	)
 	notifyQueue = nil
+}
+
+// formatNotification builds the notification title and body for the queued
+// events. When only errors are queued, the output matches what vault-unseal
+// has always sent.
+func formatNotification(environment string, events []notifyEvent) (title, body string) {
+	var unseals, errs int
+	for _, event := range events {
+		if event.kind.isError() {
+			errs++
+		} else {
+			unseals++
+		}
+	}
+
+	var text strings.Builder
+	switch {
+	case unseals == 0:
+		title = fmt.Sprintf("vault-unseal: %s: %d error(s) occurred", environment, errs)
+		text.WriteString("vault-unseal ran into errors when attempting to check seal status/unseal. here are the errors:\n")
+	case errs == 0:
+		title = fmt.Sprintf("vault-unseal: %s: %d node(s) unsealed", environment, unseals)
+		text.WriteString("vault-unseal successfully unsealed one or more nodes. here are the events:\n")
+	default:
+		title = fmt.Sprintf(
+			"vault-unseal: %s: %d node(s) unsealed, %d error(s) occurred",
+			environment, unseals, errs,
+		)
+		text.WriteString("vault-unseal unsealed one or more nodes, and ran into errors when attempting to check seal status/unseal. here are the events:\n")
+	}
+
+	for _, event := range events {
+		fmt.Fprintf(&text, "\n%s :: %v", event.timestamp.Format(time.RFC3339), event.err)
+	}
+
+	fmt.Fprintf(
+		&text, "\n\nsent from vault-unseal. version: %s, compile date: %s",
+		version, date,
+	)
+
+	return title, text.String()
 }

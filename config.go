@@ -37,9 +37,48 @@ type TLSConfig struct {
 }
 
 type NotifyConfig struct {
-	MaxElapsed time.Duration `name:"max-elapsed" env:"MAX_ELAPSED" help:"max time before the notification can be queued before it is sent" yaml:"max_elapsed"`
-	QueueDelay time.Duration `name:"queue-delay" env:"QUEUE_DELAY" help:"time we queue the notification to allow as many notifications to be sent in one go (e.g. if no notification within X time, send all notifications)" yaml:"queue_delay"`
+	MaxElapsed time.Duration `name:"max-elapsed" env:"MAX_ELAPSED" help:"max time a notification can be queued before the queue is sent. 0 sends notifications immediately (default)" yaml:"max_elapsed"`
+	QueueDelay time.Duration `name:"queue-delay" env:"QUEUE_DELAY" help:"time we queue the notification to allow as many notifications to be sent in one go (e.g. if no notification within X time, send all notifications). only used when max-elapsed is set. min 10s, max 10m" yaml:"queue_delay"`
 	URLs       []string      `name:"urls" env:"URLS" help:"shoutrrr URLs to send notifications to" yaml:"urls"`
+	Events     []string      `name:"events" env:"EVENTS" help:"event types to send notifications for: unseal, seal_status_error, unseal_error, or error (all error types). defaults to all events" yaml:"events"`
+
+	// events, maxElapsed and queueDelay are the effective values of Events,
+	// MaxElapsed and QueueDelay, populated by [Config.Validate].
+	events     map[eventKind]bool `kong:"-" yaml:"-"`
+	maxElapsed time.Duration      `kong:"-" yaml:"-"`
+	queueDelay time.Duration      `kong:"-" yaml:"-"`
+}
+
+// allows reports whether notifications should be sent for the given event kind.
+// No configured events means all events are allowed.
+func (n *NotifyConfig) allows(kind eventKind) bool {
+	return len(n.events) == 0 || n.events[kind]
+}
+
+// parseEvents converts the user-provided event names into a set of event kinds.
+func parseEvents(names []string) (map[eventKind]bool, error) {
+	events := make(map[eventKind]bool, len(allEventKinds))
+	for _, name := range names {
+		name = strings.ToLower(strings.TrimSpace(name))
+		switch {
+		case name == "":
+			continue
+		case name == eventGroupError:
+			for _, kind := range allEventKinds {
+				if kind.isError() {
+					events[kind] = true
+				}
+			}
+		case slices.Contains(allEventKinds, eventKind(name)):
+			events[eventKind(name)] = true
+		default:
+			return nil, fmt.Errorf(
+				"invalid notify event %q (valid: %s, %s)",
+				name, eventGroupError, joinEventKinds(allEventKinds),
+			)
+		}
+	}
+	return events, nil
 }
 
 type EmailConfig struct { // Deprecated: use notify.urls (Shoutrrr) instead.
@@ -135,7 +174,25 @@ func (c *Config) Validate(ctx context.Context, logger *slog.Logger) error {
 		}
 	}
 
-	c.NotifyQueueDelay = clamp(c.NotifyQueueDelay, 10*time.Second, 10*time.Minute)
+	var err error
+	c.Notify.events, err = parseEvents(c.Notify.Events)
+	if err != nil {
+		return err
+	}
+
+	// The new notify.* settings take precedence, falling back to the deprecated
+	// top-level settings. The effective values are stored separately, so that a
+	// config reload still sees what the user provided.
+	c.Notify.maxElapsed = c.Notify.MaxElapsed
+	if c.Notify.maxElapsed <= 0 {
+		c.Notify.maxElapsed = max(c.NotifyMaxElapsed, 0)
+	}
+
+	c.Notify.queueDelay = c.Notify.QueueDelay
+	if c.Notify.queueDelay <= 0 {
+		c.Notify.queueDelay = c.NotifyQueueDelay
+	}
+	c.Notify.queueDelay = clamp(c.Notify.queueDelay, 10*time.Second, 10*time.Minute)
 
 	return nil
 }
